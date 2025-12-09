@@ -1,0 +1,37 @@
+[
+  {
+    "source": "reunews",
+    "date": "2025-10-16T08:41:40.456333",
+    "text": "Российский космический аппарат успешно вышел на орбиту Луны.",
+    "annotations": [
+      {
+        "label": "GEO_LOC",
+        "start": 55,
+        "end": 59
+      }
+    ],
+    "io_type": "DEMORALIZATION",
+    "emo_eval": "Neutral",
+    "fake_claim": "False"
+  },
+  {
+    "source": "reunews",
+    "date": "2025-10-16T09:09:15.605022",
+    "text": "Ликвидированы открытые участки горения на объектах ТЭК в Котовском районе Волгоградской области, возникшие после падения обломков БПЛА, сообщили местные власти\"",
+    "annotations": [
+      {
+        "label": "GEO_LOC",
+        "start": 57,
+        "end": 73
+      },
+      {
+        "label": "GEO_LOC",
+        "start": 74,
+        "end": 95
+      }
+    ],
+    "io_type": "DEMORALIZATION",
+    "emo_eval": "Neutral",
+    "fake_claim": "False"
+  }
+]

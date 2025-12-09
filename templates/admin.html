@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <title>Администратор панелі</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0, #6ee7b7);
+      color: #064e3b;
+      padding: 30px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #065f46;
+      font-size: 2rem;
+      margin-bottom: 25px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr;
+      gap: 20px;
+    }
+
+    section {
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      color: #047857;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th {
+      background: #10b981;
+      color: white;
+      padding: 10px;
+    }
+
+    td {
+      padding: 8px;
+      border-bottom: 1px solid #a7f3d0;
+      word-wrap: break-word;
+    }
+
+    tr:hover {
+      background: #ecfdf5;
+      cursor: pointer;
+    }
+
+    button {
+      background: #10b981;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    button:hover {
+      background: #059669;
+    }
+
+    .analysis-box {
+      background: #ecfdf5;
+      border: 1.5px solid #10b981;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .text-block {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 8px;
+      word-wrap: break-word;
+    }
+
+    .terms {
+      grid-column: 1 / 3;
+      text-align: center;
+    }
+
+    .open-thesaurus {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+
+    .open-thesaurus:hover {
+      background: #059669;
+    }
+
+    @media (max-width: 1000px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <h1><i class="fas fa-user-shield"></i> Администратор панелі</h1>
+
+  <div class="dashboard">
+
+  <!-- 🔬 NLP Талдау (Енді бірінші және кең баған) -->
+  <section class="feed" style="grid-column: 1 / 2;">
+    <h2><i class="fas fa-robot"></i> NLP-Талдау Жүйесі</h2>
+
+    <form id="analysis-form">
+        <div class="form-group">
+            <label for="text-input">Талдауға арналған мәтін:</label>
+            <textarea id="text-input" rows="7"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="channel-input">Канал:</label>
+            <input type="text" id="channel-input">
+        </div>
+
+        <div class="form-group">
+            <label for="date-input">Дата:</label>
+            <input type="datetime-local" id="date-input">
+        </div>
+
+        <button type="submit" id="analyze-button">Талдау</button>
+    </form>
+
+    <div id="loader" class="hidden">🔄 Талдау жүріп жатыр...</div>
+
+    <section id="results" class="hidden">
+        <h2>📌 Жалпы ақпарат</h2>
+        <table id="general-table"></table>
+
+        <h2>🧩 NER — Атауларды тану</h2>
+        <table id="ner-table"></table>
+
+        <h2>📚 Тезаурус терминдері</h2>
+        <table id="thesaurus-table"></table>
+
+        <h2>🧠 LLM сараптамасы</h2>
+        <div id="llm-summary" class="summary-box"></div>
+    </section>
+
+    <div id="error-message" class="hidden"></div>
+  </section>
+
+  <!-- 📨 Message Feed (Тар баған, аз орын алады) -->
+  <section class="feed" style="grid-column: 2 / 3; max-height: 80vh; overflow-y: auto;">
+    <h2><i class="fas fa-envelope"></i> Message Feed</h2>
+
+    <table id="messageTable">
+      <thead>
+        <tr>
+          <th>Канал</th>
+          <th>Дата</th>
+          <th>Текст</th>
+          <th>IO_type</th>
+          <th>EMO_eval</th>
+          <th>Fake_claim</th>
+          <th>Әрекет</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in data %}
+          {% if item.text or item.source or item.io_type or item.emo_eval or item.fake_claim %}
+          <tr data-source="{{ item.source }}" 
+              data-date="{{ item.date }}" 
+              data-text="{{ item.text }}" 
+              data-io="{{ item.io_type }}" 
+              data-emo="{{ item.emo_eval }}" 
+              data-fake="{{ item.fake_claim }}">
+
+            {% if item.source %}<td>{{ item.source }}</td>{% else %}<td>—</td>{% endif %}
+            {% if item.date %}<td>{{ item.date }}</td>{% else %}<td>—</td>{% endif %}
+            {% if item.text %}<td>{{ item.text }}</td>{% else %}<td>—</td>{% endif %}
+            {% if item.io_type %}<td>{{ item.io_type }}</td>{% else %}<td>—</td>{% endif %}
+            {% if item.emo_eval %}<td>{{ item.emo_eval }}</td>{% else %}<td>—</td>{% endif %}
+            {% if item.fake_claim %}<td>{{ item.fake_claim }}</td>{% else %}<td>—</td>{% endif %}
+
+            <td>
+              <form method="POST" action="{{ url_for('delete_record', record_id=loop.index0) }}" style="display:inline;">
+                <button type="submit">🗑 Өшіру</button>
+              </form>
+            </td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+  </section>
+
+    <!-- 🔍 Message Analysis -->
+    <section class="analysis">
+      <h2><i class="fas fa-magnifying-glass-chart"></i> Message Analysis</h2>
+      <div class="analysis-box">
+        <p><strong>Source:</strong> <span id="aSource">—</span></p>
+        <p><strong>Date:</strong> <span id="aDate">—</span></p>
+        <p><strong>IO Type:</strong> <span id="aIO">—</span></p>
+        <p><strong>Fake Claim:</strong> <span id="aFake">—</span></p>
+        <p><strong>Emo Eval:</strong> <span id="aEmo">—</span></p>
+        <p><strong>Text:</strong></p>
+        <p id="aText" class="text-block">Хабарламаны таңдаңыз...</p>
+      </div>
+    </section>
+
+    <!-- 📘 Terms -->
+    <section class="terms">
+      <h2><i class="fas fa-book"></i> Terms</h2>
+      <p>Терминдер базасын тезаурус бетінде өңдеуге болады.</p>
+      <a href="{{ url_for('thesaurus_page') }}" class="open-thesaurus">
+        <i class="fas fa-link"></i> Тезаурусқа өту
+      </a>
+    </section>
+
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const rows = document.querySelectorAll("#messageTable tbody tr");
+
+  rows.forEach(row => {
+    row.addEventListener("click", () => {
+      document.getElementById("aSource").textContent = row.dataset.source || "—";
+      document.getElementById("aDate").textContent = row.dataset.date || "—";
+      document.getElementById("aIO").textContent = row.dataset.io || "—";
+      document.getElementById("aFake").textContent = row.dataset.fake || "—";
+      document.getElementById("aEmo").textContent = row.dataset.emo || "—";
+      document.getElementById("aText").textContent = row.dataset.text || "—";
+
+      document.querySelector(".analysis").scrollIntoView({ behavior: "smooth" });
+    });
+  });
+});
+</script>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

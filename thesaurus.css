@@ -1,0 +1,190 @@
+body {
+  margin: 0;
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0, #6ee7b7);
+  color: #064e3b;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 0;
+}
+
+.container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  padding: 40px 60px;
+  width: 90%;
+  max-width: 900px;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+h1 {
+  text-align: center;
+  font-size: 2.3rem;
+  margin-bottom: 5px;
+  color: #065f46;
+}
+
+header p {
+  text-align: center;
+  color: #047857;
+  margin-bottom: 30px;
+}
+
+/* 🌍 Тіл таңдау */
+.language-switch {
+  text-align: right;
+  margin-bottom: 25px;
+}
+
+.language-switch label {
+  font-weight: 500;
+  margin-right: 10px;
+}
+
+.language-switch select {
+  padding: 8px 15px;
+  border-radius: 8px;
+  border: 2px solid #10b981;
+  background: #ecfdf5;
+  font-size: 1rem;
+  color: #064e3b;
+  outline: none;
+}
+
+/* 🔹 Негізгі бөлім */
+.thesaurus-section {
+  margin: 40px 0;
+  text-align: left;
+}
+
+.thesaurus-section h2 {
+  color: #065f46;
+  margin-bottom: 15px;
+  font-size: 1.4rem;
+}
+
+/* 🔍 Іздеу */
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #ecfdf5;
+  border: 2px solid #10b981;
+  border-radius: 50px;
+  padding: 5px;
+  max-width: 500px;
+}
+
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 12px 15px;
+  font-size: 1rem;
+  color: #064e3b;
+}
+
+.search-box button {
+  background: #10b981;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: 0.3s;
+}
+
+.search-box button:hover {
+  background: #059669;
+}
+
+.hint {
+  font-size: 0.9rem;
+  color: #16a34a;
+  margin-top: 10px;
+}
+
+/* 🔎 Іздеу нәтижесі */
+.search-result {
+  background: #f0fdf4;
+  border-radius: 15px;
+  padding: 20px;
+  border: 1px solid #a7f3d0;
+  margin-top: 20px;
+  width: 90%;
+}
+
+.search-result i {
+  color: #10b981;
+  font-size: 1.8rem;
+  margin-right: 10px;
+}
+
+/* ➕ Жаңа термин қосу */
+.add-form input,
+.add-form textarea {
+  width: 100%;
+  display: block;
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1.5px solid #10b981;
+  background: #f0fdf4;
+  outline: none;
+  font-size: 1rem;
+}
+
+.add-form textarea {
+  resize: none;
+}
+
+.add-form button {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 25px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.add-form button:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+/* 📈 Граф аймағы */
+.graph-area {
+  background: #f0fdf4;
+  border: 2px dashed #6ee7b7;
+  border-radius: 15px;
+  padding: 40px;
+  text-align: center;
+  max-width: 650px;
+}
+
+.graph-area i {
+  color: #10b981;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+/* 🌿 Разделитель */
+.divider {
+  border: none;
+  height: 2px;
+  background: #a7f3d0;
+  width: 100%;
+  margin: 40px 0;
+}
+
+/* ✨ Анимация */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

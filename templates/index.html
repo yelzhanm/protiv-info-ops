@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <title>Противодействие ИО</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="hero">
+    <h1>Ақпараттық операцияларға қарсы іс-қимыл жүйесі</h1>
+    <p>Жүйеге кіру үшін рөліңізді таңдаңыз</p>
+    <div class="roles">
+      <a href="{{ url_for('admin_page') }}" class="role-card">
+        <i class="fas fa-user-shield fa-2x"></i>
+        <h3>Администратор</h3>
+        <p>Жүйе параметрлерін басқару</p>
+      </a>
+
+     <a href="{{ url_for('analytics_page') }}" target="_blank" class="role-card">
+  <i class="fas fa-user-secret fa-2x"></i>
+  <h3>Аналитик</h3>
+  <p>Хабарламаларды қарау және фейктерді белгілеу</p>
+</a>
+
+      <a href="{{ url_for('thesaurus_page') }}" class="role-card">
+        <i class="fas fa-book fa-2x"></i>
+        <h3>Лингвист / Тезаурус</h3>
+        <p>Терминдерді қосу және өңдеу</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

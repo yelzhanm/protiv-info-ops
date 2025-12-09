@@ -1,0 +1,153 @@
+body {
+  margin: 0;
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #e0fdf4, #bbf7d0);
+  color: #064e3b;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+  padding: 30px;
+}
+
+/* 🔹 Feed Section */
+.feed {
+  grid-row: 1 / 3;
+  background: #ffffffd8;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.feed h2 {
+  margin-bottom: 15px;
+  color: #047857;
+}
+
+.feed table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.feed th {
+  background: #10b981;
+  color: white;
+  padding: 10px;
+  text-align: left;
+}
+
+.feed td {
+  padding: 8px;
+  border-bottom: 1px solid #a7f3d0;
+}
+
+.feed tr:hover {
+  background: #f0fdf4;
+  cursor: pointer;
+}
+
+/* 🔹 Message Analysis */
+.analysis {
+  background: #ffffffd8;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.analysis h2 {
+  color: #047857;
+  margin-bottom: 10px;
+}
+
+.analysis-box {
+  background: #ecfdf5;
+  border: 1.5px solid #10b981;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.text-block {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+/* 🔹 Analytics */
+.analytics {
+  background: #ffffffd8;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.analytics h2 {
+  color: #047857;
+}
+
+.graph-placeholder {
+  background: #ecfdf5;
+  border: 2px dashed #10b981;
+  border-radius: 10px;
+  padding: 40px;
+  margin: 10px 0 20px;
+}
+
+.graph-placeholder i {
+  font-size: 2.5rem;
+  color: #10b981;
+}
+
+.stats button {
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  color: white;
+  margin: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.fake-btn { background: #ef4444; }
+.true-btn { background: #10b981; }
+.review-btn { background: #f59e0b; }
+
+.stats button:hover {
+  opacity: 0.9;
+}
+
+/* 🔹 Terms */
+.terms {
+  grid-column: 1 / 4;
+  background: #ffffffd8;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.open-thesaurus {
+  display: inline-block;
+  margin-top: 10px;
+  background: #10b981;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.open-thesaurus:hover {
+  background: #059669;
+}
+
+/* Адаптив */
+@media (max-width: 1000px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+}

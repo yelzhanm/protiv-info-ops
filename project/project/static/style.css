@@ -1,0 +1,104 @@
+/* Общий стиль страницы */
+body {
+    font-family: 'Times New Roman', Times, serif;
+    margin: 40px;
+    background-color: #e8f5e9; /* светло-зеленый фон */
+    color: #2e3e2f;
+}
+
+h1, h2 {
+    text-align: center;
+    color: #1b5e20; /* темно-зеленый */
+}
+
+h2 {
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+
+/* Таблица */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+th, td {
+    border: none;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+th {
+    background-color: #2e7d32; /* насыщенный зеленый */
+    color: white;
+    font-weight: bold;
+}
+
+td {
+    border-bottom: 1px solid #c8e6c9;
+    vertical-align: top;
+}
+
+tr:hover td {
+    background-color: #d0f0c0; /* светло-зеленый при наведении */
+}
+
+/* Кнопки */
+button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: #43a047; /* зеленый */
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2e7d32;
+}
+
+/* Форма добавления текста */
+form {
+    max-width: 800px;
+    margin: 0 auto 40px auto;
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+input[type="text"], textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    border: 1px solid #a5d6a7;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+textarea {
+    resize: vertical;
+}
+
+/* Подсветка сущностей (если добавим цвет прямо в тексте) */
+span.highlight {
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+span.MIL_TERM { background-color: #a5d6a7; }       /* светло-зеленый */
+span.GEO_LOC { background-color: #81c784; }        /* мягкий зеленый */
+span.SOURCE { background-color: #66bb6a; }         /* насыщенный зеленый */
+span.TARGET_ENTITY { background-color: #4caf50; }  /* основной зеленый */
+span.TIME_REF { background-color: #388e3c; color: white; } 
+span.AUTHOR_INTENT { background-color: #2e7d32; color: white; }
+

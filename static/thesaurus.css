@@ -1,0 +1,134 @@
+/* 🌿 Жасыл фон */
+body {
+  margin: 0;
+  padding: 40px 0;
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0, #6ee7b7);
+  color: #064e3b;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* 🔹 Контейнер */
+.container {
+  width: 100%;
+  max-width: 1200px;   /* максималды ен */
+  padding: 0 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* 🃏 Карточкалар */
+.card {
+  width: 100%;           /* экранға созылады */
+  padding: 40px 45px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  margin-bottom: 45px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;  /* ішіндегі элементтерді кеңейтеміз */
+}
+
+/* 🔸 Тақырыптар */
+h1 {
+  text-align: center;
+  font-size: 2.6rem;
+  margin-bottom: 10px;
+  color: #065f46;
+  font-weight: 700;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #047857;
+  margin-bottom: 45px;
+}
+
+/* Карточка ішіндегі тақырып */
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 1.6rem;
+  color: #065f46;
+}
+
+/* 🟩 Инпуттар, select, textarea */
+input, select, textarea {
+  width: 100%;           /* толық кеңейту */
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 2px solid #10b981;
+  background: #f0fdf4;
+  font-size: 1rem;
+  outline: none;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  transition: .2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #059669;
+  box-shadow: 0 0 6px rgba(16,185,129,0.35);
+}
+
+/* 🟩 Батырмалар */
+button {
+  width: 100%;          /* толық кеңейту */
+  padding: 14px 0;
+  background: #10b981;
+  border: none;
+  color: white;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: .2s;
+  font-weight: 600;
+}
+
+button:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+/* 🔎 Нәтиже карточкасы */
+.results {
+  width: 100%;           /* кеңейту */
+  background: #f0fdf4;
+  border: 1px solid #a7f3d0;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  margin-top: 25px;
+  box-sizing: border-box;
+}
+
+/* 🔗 Relations */
+.relation-item {
+  margin-left: 12px;
+  cursor: pointer;
+  color: #047857;
+  text-decoration: underline;
+}
+
+.relation-item:hover {
+  color: #065f46;
+  text-decoration: none;
+}
+
+/* ❌ Қате */
+.error {
+  color: #d93025;
+  font-weight: 600;
+}
+
+/* Анимация */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

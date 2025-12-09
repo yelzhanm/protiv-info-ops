@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Автоматическая разметка текста</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Автоматическая таблица аннотаций</h1>
+
+<table>
+<thead>
+<tr>    
+<th>Канал</th>
+<th>Дата</th>
+<th>Текст</th>
+<th>IO_Type</th>
+<th>EMO_Eval</th>
+<th>Fake_Claim</th>
+<th>MIL_TERM</th>
+<th>GEO_LOC</th>
+<th>SOURCE</th>
+<th>TARGET_ENTITY</th>
+<th>TIME_REF</th>
+<th>AUTHOR_INTENT</th>
+<th>Действие</th>
+</tr>
+</thead>
+<tbody>
+{% for item in data %}
+<tr>
+<td>{{ item.source }}</td>
+<td>{{ item.date }}</td>
+<td>{{ item.text }}</td>
+<td>{{ item.io_type }}</td>
+<td>{{ item.emo_eval }}</td>
+<td>{{ item.fake_claim }}</td>
+
+<!-- Колонки для сущностей -->
+<td>{% for ann in item.annotations if ann.label == "MIL_TERM" %}{{ item.text[ann.start:ann.end] }}<br>{% endfor %}</td>
+<td>{% for ann in item.annotations if ann.label == "GEO_LOC" %}{{ item.text[ann.start:ann.end] }}<br>{% endfor %}</td>
+<td>{% for ann in item.annotations if ann.label == "SOURCE" %}{{ item.text[ann.start:ann.end] }}<br>{% endfor %}</td>
+<td>{% for ann in item.annotations if ann.label == "TARGET_ENTITY" %}{{ item.text[ann.start:ann.end] }}<br>{% endfor %}</td>
+<td>{% for ann in item.annotations if ann.label == "TIME_REF" %}{{ item.text[ann.start:ann.end] }}<br>{% endfor %}</td>
+<td>{% for ann in item.annotations if ann.label == "AUTHOR_INTENT" %}{{ item.text[ann.start:ann.end] }}<br>{% endfor %}</td>
+
+<td>
+<form method="post" style="display:inline;">
+<button type="submit" name="delete" value="{{ loop.index0 }}">Удалить</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>Добавить новый текст</h2>
+<form method="post">
+<label>Источник/Канал: <input type="text" name="source" placeholder="Введите канал" required></label><br><br>
+<label>Текст: <textarea name="text" rows="5" cols="80" required></textarea></label><br><br>
+<button type="submit">Добавить разметку</button>
+</form>
+
+</body>
+</html>
+
+

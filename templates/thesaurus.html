@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Military Thesaurus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background: #c6f6cf;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgb(110, 163, 115);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(245, 237, 237, 0.1);
+        }
+        
+        h1 {
+            color: #edf4e9;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .search-section, .add-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #087b51;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        h3 {
+            color: #244728;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #112219;
+            font-weight: bold;
+        }
+        
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        button {
+            background: #078834;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #c6f3d0;
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .error {
+            background: #ffeaea;
+            color: #c0392b;
+            border-left: 4px solid #c0392b;
+        }
+        
+        .success {
+            background: #e8f6f3;
+            color: #27ae60;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .language-section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .language-header {
+            background: #2c5037;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+        
+        .language-content {
+            padding: 20px;
+        }
+        
+        .scope-notes {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .note-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+        
+        .note-list li {
+            padding: 8px;
+            background: white;
+            margin-bottom: 5px;
+            border-left: 3px solid #0e8730;
+        }
+        
+        .relations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .relation-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .relation-card h4 {
+            color: #9effa0;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #008003;
+            padding-bottom: 5px;
+        }
+        
+        .relation-list {
+            list-style: none;
+        }
+        
+        .relation-list li {
+            padding: 8px;
+            background: #f8f9fa;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .lang-badge {
+            background: #006a0e;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .term-name {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        .relationship-section {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .relationship-help {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        
+        .relationship-help h4 {
+            color: #165f1d;
+            margin-bottom: 10px;
+        }
+        
+        .relationship-help ul {
+            list-style: none;
+            margin-left: 15px;
+        }
+        
+        .relationship-help li {
+            margin-bottom: 8px;
+            padding-left: 5px;
+        }
+        
+        .help-text {
+            color: #666;
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+        }
+        
+        #loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #009938;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .relations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Military Thesaurus</h1>
+        
+        <!-- Messages (JavaScript арқылы басқарылады) -->
+        <div id="message" class="message"></div>
+        
+        <!-- Search Section -->
+        <div class="search-section">
+            <h2>Search Term</h2>
+            <form id="searchForm">
+                <div class="form-group">
+                    <label for="term">Term:</label>
+                    <input type="text" id="term" name="term" 
+                           placeholder="Enter term (e.g., Military Operation)" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="language">Language:</label>
+                    <select id="language" name="language">
+                        <option value="EN">English (EN)</option>
+                        <option value="RU">Russian (RU)</option>
+                        <option value="KZ">Kazakh (KZ)</option>
+                    </select>
+                </div>
+                
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        
+        <!-- Add Term Section -->
+        <div class="add-section">
+            <h2>Add New Term</h2>
+            <form id="addForm">
+                <div class="form-group">
+                    <label for="new_term">Term Name:</label>
+                    <input type="text" id="new_term" name="term" 
+                           placeholder="Enter term name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new_language">Language:</label>
+                    <select id="new_language" name="language">
+                        <option value="EN">English (EN)</option>
+                        <option value="RU">Russian (RU)</option>
+                        <option value="KZ">Kazakh (KZ)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="scope_note">Scope Note (Optional):</label>
+                    <textarea id="scope_note" name="scope_note" 
+                              placeholder="Enter description of the term..."></textarea>
+                </div>
+                
+                <!-- Relationship Section -->
+                <div class="relationship-section">
+                    <h3>Add Relationship (Optional)</h3>
+                    
+                    <div class="form-group">
+                        <label for="relation_type">Relationship Type:</label>
+                        <select id="relation_type" name="relation_type">
+                            <option value="">-- Select Relationship --</option>
+                            <option value="BT">Broader Term (BT) - This term is narrower than...</option>
+                            <option value="NT">Narrower Term (NT) - This term is broader than...</option>
+                            <option value="RT">Related Term (RT) - This term is related to...</option>
+                            <option value="UF">Used For (UF) - This term is used for...</option>
+                            <option value="PT">Part Of (PT) - This term is part of...</option>
+                            <option value="LE">Language Equivalent (LE) - This term is equivalent to...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="related_term">Related To:</label>
+                        <input type="text" id="related_term" name="related_term" 
+                               list="existing-terms"
+                               placeholder="Search or select existing term">
+                        <datalist id="existing-terms">
+                            {% if all_terms %}
+                                {% for term_name in all_terms %}
+                                    <option value="{{term_name}}">
+                                {% endfor%}
+                            {% endif %}        
+                        </datalist>
+                        <small class="help-text">
+                            Start typing to search existing terms. Format: "term (language)" or just "term"
+                        </small>
+                    </div>
+                </div>
+                
+                <button type="submit">Add Term & Relationship</button>
+            </form>
+            
+            <div class="relationship-help">
+                <h4>Relationship Types:</h4>
+                <ul>
+                    <li><strong>BT (Broader Term):</strong> This term is more specific than the related term</li>
+                    <li><strong>NT (Narrower Term):</strong> This term is more general than the related term</li>
+                    <li><strong>RT (Related Term):</strong> This term is conceptually related to the related term</li>
+                    <li><strong>UF (Used For):</strong> This term can be used instead of the related term</li>
+                    <li><strong>PT (Part Of):</strong> This term is a component of the related term</li>
+                    <li><strong>LE (Language Equivalent):</strong> This term means the same in another language</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+        
+        <!-- Results Section (JavaScript арқылы толтырылады) -->
+        <div id="resultsSection" class="results-section">
+            <h2>Search Results</h2>
+            <div id="resultsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM элементдерін табу
+        const searchForm = document.getElementById('searchForm');
+        const addForm = document.getElementById('addForm');
+        const messageDiv = document.getElementById('message');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const loadingDiv = document.getElementById('loading');
+        const existingTermsDatalist = document.getElementById('existing-terms');
+        
+        // Барлық терминдерді жүктеу
+        async function loadAllTerms() {
+            try {
+                const response = await fetch('/thesaurus/search?term=');
+                const data = await response.json();
+                
+                if (data.all_terms) {
+                    // datalist-ті толтыру
+                    existingTermsDatalist.innerHTML = '';
+                    data.all_terms.forEach(term => {
+                        const option = document.createElement('option');
+                        option.value = term;
+                        existingTermsDatalist.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Терминдерді жүктеу кезінде қате:', error);
+            }
+        }
+        
+        // Хабарлама көрсету
+        function showMessage(text, type = 'success') {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Нәтижелерді көрсету
+        function displayResults(data) {
+            if (data.error) {
+                showMessage(data.error, 'error');
+                resultsSection.style.display = 'none';
+                return;
+            }
+            
+            resultsContainer.innerHTML = '';
+            
+            if (!data.results || Object.keys(data.results).length === 0) {
+                showMessage('No results found', 'error');
+                resultsSection.style.display = 'none';
+                return;
+            }
+            
+            // Әрбір тіл үшін нәтижелерді көрсету
+            Object.entries(data.results).forEach(([langCode, langData]) => {
+                const languageSection = document.createElement('div');
+                languageSection.className = 'language-section';
+                
+                // Тіл басы
+                const languageHeader = document.createElement('div');
+                languageHeader.className = 'language-header';
+                languageHeader.textContent = `${langData.term} (${langData.language})`;
+                languageSection.appendChild(languageHeader);
+                
+                const languageContent = document.createElement('div');
+                languageContent.className = 'language-content';
+                
+                // Scope Notes
+                if (langData.scope_notes && langData.scope_notes.length > 0) {
+                    const scopeNotesDiv = document.createElement('div');
+                    scopeNotesDiv.className = 'scope-notes';
+                    
+                    const scopeNotesTitle = document.createElement('h3');
+                    scopeNotesTitle.textContent = 'Scope Notes:';
+                    scopeNotesDiv.appendChild(scopeNotesTitle);
+                    
+                    const noteList = document.createElement('ul');
+                    noteList.className = 'note-list';
+                    
+                    langData.scope_notes.forEach(note => {
+                        if (note) {
+                            const li = document.createElement('li');
+                            li.textContent = note;
+                            noteList.appendChild(li);
+                        }
+                    });
+                    
+                    scopeNotesDiv.appendChild(noteList);
+                    languageContent.appendChild(scopeNotesDiv);
+                }
+                
+                // Қатынастар
+                const relationsGrid = document.createElement('div');
+                relationsGrid.className = 'relations-grid';
+                
+                // Әрбір қатынас түрі үшін
+                const relationTypes = [
+                    { key: 'BROADER_TERM', title: 'Broader Terms' },
+                    { key: 'NARROWER_TERM', title: 'Narrower Terms' },
+                    { key: 'RELATED_TERM', title: 'Related Terms' },
+                    { key: 'USED_FOR', title: 'Used For' },
+                    { key: 'PART_OF', title: 'Part Of' },
+                    { key: 'LANGUAGE_EQUIVALENT', title: 'Language Equivalents' }
+                ];
+                
+                relationTypes.forEach(relType => {
+                    const relations = langData.relations?.[relType.key];
+                    if (relations && relations.length > 0) {
+                        const relationCard = document.createElement('div');
+                        relationCard.className = 'relation-card';
+                        
+                        const cardTitle = document.createElement('h4');
+                        cardTitle.textContent = relType.title;
+                        relationCard.appendChild(cardTitle);
+                        
+                        const relationList = document.createElement('ul');
+                        relationList.className = 'relation-list';
+                        
+                        relations.forEach(rel => {
+                            if (rel.term) {
+                                const li = document.createElement('li');
+                                
+                                const termSpan = document.createElement('span');
+                                termSpan.className = 'term-name';
+                                termSpan.textContent = rel.term;
+                                
+                                const langSpan = document.createElement('span');
+                                langSpan.className = 'lang-badge';
+                                langSpan.textContent = rel.language || '?';
+                                
+                                li.appendChild(termSpan);
+                                li.appendChild(langSpan);
+                                relationList.appendChild(li);
+                            }
+                        });
+                        
+                        relationCard.appendChild(relationList);
+                        relationsGrid.appendChild(relationCard);
+                    }
+                });
+                
+                languageContent.appendChild(relationsGrid);
+                languageSection.appendChild(languageContent);
+                resultsContainer.appendChild(languageSection);
+            });
+            
+            resultsSection.style.display = 'block';
+        }
+        
+        // Іздеу формасының оқиғасы
+        searchForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const term = document.getElementById('term').value.trim();
+            const language = document.getElementById('language').value;
+            
+            if (!term) {
+                showMessage('Please enter a search term', 'error');
+                return;
+            }
+            
+            // Жүктеу индикаторын көрсету
+            loadingDiv.style.display = 'block';
+            resultsSection.style.display = 'none';
+            
+            try {
+                const response = await fetch(`/thesaurus/search?term=${encodeURIComponent(term)}&language=${language}`);
+                const data = await response.json();
+                
+                displayResults(data);
+            } catch (error) {
+                showMessage('Search failed: ' + error.message, 'error');
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        });
+        
+        // Қосу формасының оқиғасы
+        addForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const term = document.getElementById('new_term').value.trim();
+            const language = document.getElementById('new_language').value;
+            const scopeNote = document.getElementById('scope_note').value.trim();
+            const relationType = document.getElementById('relation_type').value;
+            const relatedTerm = document.getElementById('related_term').value.trim();
+            
+            if (!term) {
+                showMessage('Term name is required', 'error');
+                return;
+            }
+            
+            // FormData жасау
+            const formData = new FormData();
+            formData.append('term', term);
+            formData.append('language', language);
+            if (scopeNote) formData.append('scope_note', scopeNote);
+            if (relationType) formData.append('relation_type', relationType);
+            if (relatedTerm) formData.append('related_term', relatedTerm);
+            
+            try {
+                const response = await fetch('/thesaurus/add', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.success, 'success');
+                    // Форманы тазалау
+                    addForm.reset();
+                    // Терминдер тізімін жаңарту
+                    loadAllTerms();
+                } else if (data.error) {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to add term: ' + error.message, 'error');
+            }
+        });
+        
+        // Дәптер жүктелген кезде терминдерді жүктеу
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllTerms();
+        });
+    </script>
+</body>
+</html>
