@@ -4,256 +4,185 @@
 
 {% block extra_css %}
 <style>
-    body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-    }
-
-    .login-container {
-        max-width: 450px;
-        width: 100%;
-        padding: 20px;
-    }
-
-    .login-card {
-        background: var(--bg-card);
-        border-radius: 16px;
-        padding: 3rem 2.5rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        animation: fadeInUp 0.6s ease;
-    }
-
-    .logo-section {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-
-    .logo-icon {
-        width: 80px;
-        height: 80px;
-        background: linear-gradient(135deg, var(--success), var(--success-dark));
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1rem;
-        animation: pulse 2s ease-in-out infinite;
-    }
-
-    .logo-icon i {
-        font-size: 2.5rem;
-        color: white;
-    }
-
-    .logo-section h2 {
-        color: var(--primary);
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-    .logo-section p {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-    }
-
-    .role-selector {
-        margin-bottom: 1.5rem;
-    }
-
-    .role-btn {
-        width: 100%;
-        padding: 1rem;
-        margin-bottom: 0.8rem;
-        border: 2px solid var(--border);
-        background: white;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        transition: all 0.3s;
-        cursor: pointer;
-    }
-
-    .role-btn:hover {
-        border-color: var(--success);
-        background: var(--success-light);
-        transform: translateX(5px);
-    }
-
-    .role-btn.active {
-        border-color: var(--success);
-        background: var(--success-light);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-    }
-
-    .role-btn input[type="radio"] {
-        width: 20px;
-        height: 20px;
-        accent-color: var(--success);
-    }
-
-    .role-info {
-        flex: 1;
-        text-align: left;
-    }
-
-    .role-info h5 {
-        margin: 0;
-        color: var(--primary);
-        font-weight: 600;
-    }
-
-    .role-info p {
-        margin: 0;
-        font-size: 0.85rem;
-        color: var(--text-muted);
-    }
-
-    .role-icon {
-        width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-light));
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-    }
-
-    .password-field {
-        position: relative;
-        margin-bottom: 1.5rem;
-    }
-
-    .password-field .form-control {
-        padding-right: 45px;
-    }
-
-    .password-toggle {
-        position: absolute;
-        right: 12px;
+    body::after {
+        content: '';
+        position: fixed;
         top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: var(--text-muted);
-        cursor: pointer;
-        padding: 5px 10px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+        filter: blur(80px);
+        pointer-events: none;
+        animation: pulse-glow 4s ease-in-out infinite;
     }
 
-    .password-toggle:hover {
-        color: var(--success);
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes pulse {
+    @keyframes pulse-glow {
 
         0%,
         100% {
-            transform: scale(1);
+            opacity: 0.5;
+            transform: translate(-50%, -50%) scale(1);
         }
 
         50% {
-            transform: scale(1.05);
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.2);
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-container">
-    <div class="login-card">
+<div class="min-h-[80vh] flex items-center justify-center">
+    <div class="w-full max-w-md relative z-10">
         <!-- Logo Section -->
-        <div class="logo-section">
-            <div class="logo-icon">
-                <i class="fas fa-shield-halved"></i>
+        <div class="text-center mb-12 animate-fade-in">
+            <div class="inline-block relative mb-6">
+                <div
+                    class="w-24 h-24 rounded-3xl bg-gradient-to-br from-neon-purple to-neon-cyan flex items-center justify-center shadow-neon-purple animate-float">
+                    <i class="fas fa-shield-halved text-5xl text-white"></i>
+                </div>
+                <div
+                    class="absolute inset-0 bg-gradient-to-br from-neon-purple to-neon-cyan rounded-3xl blur-2xl opacity-50 animate-pulse">
+                </div>
             </div>
-            <h2>{{ t.app_title }}</h2>
-            <p>{{ t.choose_role }}</p>
+            <h2
+                class="text-4xl font-display font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-neon-purple via-neon-cyan to-neon-green">
+                {{ t.app_title if t else 'ИО Жүйесі' }}
+            </h2>
+            <p class="text-gray-400">Рөліңізді таңдап, жүйеге кіріңіз</p>
         </div>
 
-        <!-- Login Form -->
-        <form id="loginForm" method="POST" action="/login">
+        <!-- Login Card -->
+        <form method="POST" action="/login" class="glass p-8 rounded-3xl shadow-2xl animate-fade-in">
             <!-- Role Selection -->
-            <div class="role-selector">
-                <label class="role-btn">
-                    <input type="radio" name="role" value="admin" required>
-                    <div class="role-icon">
-                        <i class="fas fa-user-shield"></i>
-                    </div>
-                    <div class="role-info">
-                        <h5>{{ t.admin }}</h5>
-                        <p>Жүйе параметрлерін басқару</p>
+            <div class="space-y-4 mb-8">
+                <!-- Admin -->
+                <label class="block cursor-pointer group">
+                    <input type="radio" name="role" value="admin" class="hidden peer" required>
+                    <div
+                        class="glass p-5 rounded-2xl border-2 border-transparent peer-checked:border-neon-purple peer-checked:bg-neon-purple/10 hover:border-neon-purple/50 transition-all duration-300 peer-checked:shadow-neon-purple">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-14 h-14 rounded-xl bg-gradient-to-br from-neon-purple to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fas fa-user-shield text-2xl text-white"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3
+                                    class="font-bold text-lg mb-1 text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-purple-400">
+                                    {{ t.admin if t else 'Администратор' }}
+                                </h3>
+                                <p class="text-sm text-gray-400">Жүйе параметрлерін басқару</p>
+                            </div>
+                            <i
+                                class="fas fa-circle-check text-2xl text-neon-purple opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                        </div>
                     </div>
                 </label>
 
-                <label class="role-btn">
-                    <input type="radio" name="role" value="analyst" required>
-                    <div class="role-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="role-info">
-                        <h5>{{ t.analyst }}</h5>
-                        <p>Хабарламаларды талдау</p>
+                <!-- Analyst -->
+                <label class="block cursor-pointer group">
+                    <input type="radio" name="role" value="analyst" class="hidden peer" required>
+                    <div
+                        class="glass p-5 rounded-2xl border-2 border-transparent peer-checked:border-neon-cyan peer-checked:bg-neon-cyan/10 hover:border-neon-cyan/50 transition-all duration-300 peer-checked:shadow-neon-cyan">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-14 h-14 rounded-xl bg-gradient-to-br from-neon-cyan to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fas fa-chart-line text-2xl text-white"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3
+                                    class="font-bold text-lg mb-1 text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-blue-400">
+                                    {{ t.analyst if t else 'Аналитик' }}
+                                </h3>
+                                <p class="text-sm text-gray-400">Хабарламаларды талдау</p>
+                            </div>
+                            <i
+                                class="fas fa-circle-check text-2xl text-neon-cyan opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                        </div>
                     </div>
                 </label>
 
-                <label class="role-btn">
-                    <input type="radio" name="role" value="linguist" required>
-                    <div class="role-icon">
-                        <i class="fas fa-book"></i>
-                    </div>
-                    <div class="role-info">
-                        <h5>{{ t.linguist }}</h5>
-                        <p>Терминдерді басқару</p>
+                <!-- Linguist -->
+                <label class="block cursor-pointer group">
+                    <input type="radio" name="role" value="linguist" class="hidden peer" required>
+                    <div
+                        class="glass p-5 rounded-2xl border-2 border-transparent peer-checked:border-neon-green peer-checked:bg-neon-green/10 hover:border-neon-green/50 transition-all duration-300 peer-checked:shadow-neon-green">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-14 h-14 rounded-xl bg-gradient-to-br from-neon-green to-green-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fas fa-book text-2xl text-white"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3
+                                    class="font-bold text-lg mb-1 text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-green-400">
+                                    {{ t.linguist if t else 'Лингвист' }}
+                                </h3>
+                                <p class="text-sm text-gray-400">Терминдерді басқару</p>
+                            </div>
+                            <i
+                                class="fas fa-circle-check text-2xl text-neon-green opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                        </div>
                     </div>
                 </label>
             </div>
 
-            <!-- Password Field -->
-            <div class="password-field">
-                <label for="password" class="form-label">Құпия сөз</label>
-                <input type="password" class="form-control" id="password" name="password" required
-                    placeholder="••••••••">
-                <button type="button" class="password-toggle" onclick="togglePassword()">
-                    <i class="fas fa-eye" id="toggleIcon"></i>
-                </button>
+            <!-- Password Input -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold mb-2 text-gray-300">Құпия сөз</label>
+                <div class="relative">
+                    <input type="password" name="password" id="password" placeholder="••••••••" required
+                        class="w-full px-4 py-3 pl-12 bg-space-light/50 border-2 border-neon-purple/30 rounded-xl text-white placeholder-gray-500 focus:border-neon-purple focus:shadow-neon-purple focus:outline-none transition-all duration-300">
+                    <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-neon-purple"></i>
+                    <button type="button" onclick="togglePassword()"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-neon-purple transition-colors">
+                        <i class="fas fa-eye" id="toggleIcon"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="btn btn-success w-100">
-                <i class="fas fa-sign-in-alt"></i> Кіру
+            <button type="submit"
+                class="w-full btn-glow py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-neon-purple via-neon-cyan to-neon-green hover:shadow-neon-purple transition-all duration-300 text-white flex items-center justify-center gap-3 group">
+                <span>Жүйеге кіру</span>
+                <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
             </button>
+
+            <!-- Security Notice -->
+            <div class="mt-6 p-4 rounded-xl bg-neon-purple/5 border border-neon-purple/20">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-shield-halved text-neon-purple mt-1"></i>
+                    <div class="text-sm text-gray-400">
+                        <span class="font-bold text-white block mb-1">Қауіпсіздік</span>
+                        Сіздің деректеріңіз шифрланған. Паролді ешкіммен бөліспеңіз.
+                    </div>
+                </div>
+            </div>
         </form>
+
+        <!-- Quick Access (Demo) -->
+        <div class="mt-8 text-center">
+            <p class="text-sm text-gray-500 mb-3">Demo үшін:</p>
+            <div class="flex justify-center gap-4 text-xs">
+                <span
+                    class="px-3 py-1 rounded-lg bg-neon-purple/10 text-neon-purple border border-neon-purple/30">admin:
+                    admin123</span>
+                <span class="px-3 py-1 rounded-lg bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30">analyst:
+                    analyst123</span>
+                <span
+                    class="px-3 py-1 rounded-lg bg-neon-green/10 text-neon-green border border-neon-green/30">linguist:
+                    linguist123</span>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Role button highlighting
-    document.querySelectorAll('.role-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-
-    // Password visibility toggle
+    // Toggle password visibility
     function togglePassword() {
         const passwordInput = document.getElementById('password');
         const toggleIcon = document.getElementById('toggleIcon');
@@ -269,30 +198,41 @@
         }
     }
 
-    // Form submission with validation
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function (e) {
         const role = document.querySelector('input[name="role"]:checked');
         const password = document.getElementById('password').value;
 
         if (!role) {
             e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Рөл таңдалмаған',
-                text: 'Рөліңізді таңдаңыз',
-                confirmButtonColor: '#10b981'
-            });
+            Utils.showError('Рөл таңдалмаған', 'Рөліңізді таңдаңыз');
+            return;
+        }
+
+        if (!password) {
+            e.preventDefault();
+            Utils.showError('Құпия сөз енгізіңіз');
+            return;
         }
     });
 
-    // Show error message if login failed
+    // Show error if login failed
     {% if error %}
-    Swal.fire({
-        icon: 'error',
-        title: 'Қате',
-        text: '{{ error }}',
-        confirmButtonColor: '#10b981'
-    });
+    Utils.showError('{{ error }}', 'Кіру сәтсіз аяқталды');
     {% endif %}
+
+
+
+    // Auto-fill demo password on role select (for demo purposes)
+    document.querySelectorAll('input[name="role"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const passwords = {
+                'admin': 'admin123',
+                'analyst': 'analyst123',
+                'linguist': 'linguist123'
+            };
+            document.getElementById('password').value = passwords[this.value];
+        });
+    });
 </script>
 {% endblock %}

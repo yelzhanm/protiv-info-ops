@@ -1,529 +1,214 @@
 {% extends "base.html" %}
 
-{% block title %}{{ t.admin_panel }} - {{ t.app_title }}{% endblock %}
-
-{% block extra_css %}
-<style>
-  .admin-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .admin-grid-full {
-    grid-column: 1 / -1;
-  }
-
-  /* NLP Analysis Section */
-  .nlp-section {
-    position: sticky;
-    top: 20px;
-  }
-
-  .analysis-form textarea {
-    min-height: 150px;
-    resize: vertical;
-  }
-
-  .analysis-results {
-    display: none;
-    animation: fadeIn 0.3s ease;
-  }
-
-  .analysis-results.show {
-    display: block;
-  }
-
-  .result-card {
-    background: var(--bg-main);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .result-card h5 {
-    color: var(--primary);
-    margin-bottom: 0.8rem;
-    font-size: 1rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .result-table {
-    width: 100%;
-    font-size: 0.9rem;
-  }
-
-  .result-table td {
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .result-table td:first-child {
-    font-weight: 600;
-    color: var(--text-muted);
-    width: 140px;
-  }
-
-  .entity-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    margin: 2px;
-    background: var(--primary);
-    color: white;
-  }
-
-  .term-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    margin: 2px;
-    background: var(--success-light);
-    color: var(--success-dark);
-  }
-
-  .threat-level {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-  }
-
-  .threat-level-1,
-  .threat-level-2 {
-    color: var(--success);
-  }
-
-  .threat-level-3 {
-    color: var(--warning);
-  }
-
-  .threat-level-4,
-  .threat-level-5 {
-    color: var(--danger);
-  }
-
-  /* Message Feed Section */
-  .message-feed-section {
-    max-height: 85vh;
-    overflow-y: auto;
-  }
-
-  .table-wrapper {
-    background: var(--bg-card);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .clickable-row {
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .clickable-row:hover {
-    background: var(--success-light) !important;
-    transform: translateX(2px);
-  }
-
-  .clickable-row.selected {
-    background: var(--success-light) !important;
-    border-left: 4px solid var(--success);
-  }
-
-  .text-preview {
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .type-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-  }
-
-  .type-demoralization {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .type-disinformation {
-    background: var(--danger-light);
-    color: var(--danger-dark);
-  }
-
-  .type-intimidation {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .type-hate_incitement {
-    background: #fecaca;
-    color: #7f1d1d;
-  }
-
-  /* Message Analysis Panel */
-  .analysis-panel {
-    position: sticky;
-    top: 20px;
-  }
-
-  .analysis-content {
-    background: var(--bg-main);
-    border-radius: 8px;
-    padding: 1.5rem;
-    min-height: 200px;
-  }
-
-  .analysis-content.empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    color: var(--text-muted);
-    padding: 3rem 1.5rem;
-  }
-
-  .analysis-content.empty i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.3;
-  }
-
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .info-item {
-    background: white;
-    padding: 1rem;
-    border-radius: 8px;
-    border-left: 4px solid var(--success);
-  }
-
-  .info-item.danger {
-    border-left-color: var(--danger);
-  }
-
-  .info-item.warning {
-    border-left-color: var(--warning);
-  }
-
-  .info-label {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 0.3rem;
-  }
-
-  .info-value {
-    font-weight: 600;
-    color: var(--text-main);
-  }
-
-  .message-text-box {
-    background: white;
-    border-radius: 8px;
-    padding: 1.2rem;
-    margin-top: 1rem;
-    line-height: 1.6;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  /* Loading Spinner */
-  .loading-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .loading-overlay.show {
-    display: flex;
-  }
-
-  .loading-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    text-align: center;
-  }
-
-  .spinner {
-    width: 50px;
-    height: 50px;
-    border: 4px solid var(--border);
-    border-top-color: var(--success);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 1rem;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Responsive */
-  @media (max-width: 1200px) {
-    .admin-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .nlp-section,
-    .analysis-panel {
-      position: static;
-    }
-  }
-
-  /* DataTables Custom Styling */
-  .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-    background: var(--success) !important;
-    color: white !important;
-    border-color: var(--success) !important;
-  }
-
-  .dataTables_wrapper .dataTables_filter input {
-    border: 2px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 12px;
-  }
-
-  .dataTables_wrapper .dataTables_length select {
-    border: 2px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 8px;
-  }
-</style>
-{% endblock %}
+{% block title %}{{ t['admin_panel'] }} - {{ t['app_title'] }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-  <div class="mb-4">
-    <h1 class="h3 mb-1">
-      <i class="fas fa-user-shield"></i>
-      {{ t.admin_panel }}
-    </h1>
-    <p class="text-muted">Хабарламаларды талдау және басқару</p>
+<!-- Header -->
+<div class="mb-8">
+  <h1
+    class="text-4xl font-display font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-cyan">
+    <i class="fas fa-user-shield mr-3"></i>
+    {{ t['admin_panel'] }}
+  </h1>
+  <p class="text-gray-400">Хабарламаларды талдау және басқару</p>
+</div>
+
+<!-- Main Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+  <!-- Left: NLP Analysis Form -->
+  <div class="lg:col-span-1">
+    <div class="glass p-6 rounded-2xl sticky top-24">
+      <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-robot text-neon-cyan"></i>
+        {{ t['nlp_analysis'] }}
+      </h2>
+
+      <form id="analysisForm" class="space-y-4">
+        <!-- Text Input -->
+        <div>
+          <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['text'] }}</label>
+          <textarea id="textInput" rows="6"
+            class="w-full px-4 py-3 bg-space-light/50 border-2 border-neon-purple/30 rounded-xl text-white placeholder-gray-500 focus:border-neon-purple focus:shadow-neon-purple focus:outline-none transition-all resize-none"
+            placeholder="{{ t['enter_text'] }}" required></textarea>
+        </div>
+
+        <!-- Channel & Date -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['channel'] }}</label>
+            <input type="text" id="channelInput" value="Manual Input"
+              class="w-full px-4 py-2 bg-space-light/50 border-2 border-neon-purple/30 rounded-xl text-white focus:border-neon-purple focus:shadow-neon-purple focus:outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['date'] }}</label>
+            <input type="datetime-local" id="dateInput"
+              class="w-full px-4 py-2 bg-space-light/50 border-2 border-neon-purple/30 rounded-xl text-white focus:border-neon-purple focus:shadow-neon-purple focus:outline-none transition-all">
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit"
+          class="w-full btn-glow py-3 rounded-xl font-bold bg-gradient-to-r from-neon-purple to-neon-cyan hover:shadow-neon-purple transition-all text-white flex items-center justify-center gap-2 group">
+          <i class="fas fa-microscope"></i>
+          <span>{{ t['analyze'] }}</span>
+          <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+        </button>
+      </form>
+
+      <!-- Analysis Results -->
+      <div id="analysisResults" class="mt-6 hidden space-y-4">
+        <div class="h-px bg-gradient-to-r from-transparent via-neon-purple to-transparent"></div>
+
+        <!-- General Info -->
+        <div class="glass p-4 rounded-xl border border-neon-purple/20">
+          <h3 class="text-sm font-bold mb-3 text-neon-cyan flex items-center gap-2">
+            <i class="fas fa-info-circle"></i>
+            Жалпы ақпарат
+          </h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-400">IO түрі:</span>
+              <span id="resIOType" class="font-bold text-neon-purple"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Фейк:</span>
+              <span id="resFakeClaim"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Эмоция:</span>
+              <span id="resEmotion"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NER Entities -->
+        <div class="glass p-4 rounded-xl border border-neon-cyan/20">
+          <h3 class="text-sm font-bold mb-3 text-neon-cyan flex items-center gap-2">
+            <i class="fas fa-tags"></i>
+            Атаулар (NER)
+          </h3>
+          <div id="resEntities" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Terms -->
+        <div class="glass p-4 rounded-xl border border-neon-green/20">
+          <h3 class="text-sm font-bold mb-3 text-neon-green flex items-center gap-2">
+            <i class="fas fa-book"></i>
+            Әскери терминдер
+          </h3>
+          <div id="resTerms" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- LLM Summary -->
+        <div class="glass p-4 rounded-xl border border-neon-purple/20">
+          <h3 class="text-sm font-bold mb-3 text-neon-purple flex items-center gap-2">
+            <i class="fas fa-brain"></i>
+            LLM талдауы
+          </h3>
+          <p id="resSummary" class="text-sm text-gray-400 mb-2"></p>
+          <div id="resThreat" class="text-sm"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="admin-grid">
-    <!-- NLP Analysis Section (Left) -->
-    <div class="nlp-section">
-      <div class="card">
-        <div class="card-header">
-          <i class="fas fa-robot"></i>
-          {{ t.nlp_analysis }}
-        </div>
-        <div class="card-body">
-          <form id="analysisForm" class="analysis-form">
-            <div class="mb-3">
-              <label for="textInput" class="form-label">{{ t.text }}</label>
-              <textarea class="form-control" id="textInput" rows="6" placeholder="{{ t.enter_text }}"
-                required></textarea>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="channelInput" class="form-label">{{ t.channel }}</label>
-                <input type="text" class="form-control" id="channelInput" placeholder="Telegram, Twitter..."
-                  value="Manual Input">
-              </div>
-              <div class="col-md-6">
-                <label for="dateInput" class="form-label">{{ t.date }}</label>
-                <input type="datetime-local" class="form-control" id="dateInput">
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-success w-100">
-              <i class="fas fa-microscope"></i>
-              {{ t.analyze }}
-            </button>
-          </form>
-
-          <!-- Analysis Results -->
-          <div id="analysisResults" class="analysis-results mt-4">
-            <hr>
-            <h5><i class="fas fa-clipboard-check"></i> Талдау нәтижелері</h5>
-
-            <!-- General Info -->
-            <div class="result-card">
-              <h5><i class="fas fa-info-circle"></i> Жалпы ақпарат</h5>
-              <table class="result-table">
-                <tr>
-                  <td>IO түрі:</td>
-                  <td><span id="resIOType" class="badge bg-primary"></span></td>
-                </tr>
-                <tr>
-                  <td>Фейк деректеме:</td>
-                  <td><span id="resFakeClaim" class="badge"></span></td>
-                </tr>
-                <tr>
-                  <td>Эмоция:</td>
-                  <td><span id="resEmotion"></span></td>
-                </tr>
-              </table>
-            </div>
-
-            <!-- NER Entities -->
-            <div class="result-card">
-              <h5><i class="fas fa-tag"></i> Атаулар (NER)</h5>
-              <div id="resEntities"></div>
-            </div>
-
-            <!-- Military Terms -->
-            <div class="result-card">
-              <h5><i class="fas fa-book"></i> Әскери терминдер</h5>
-              <div id="resTerms"></div>
-            </div>
-
-            <!-- LLM Summary -->
-            <div class="result-card">
-              <h5><i class="fas fa-brain"></i> LLM талдауы</h5>
-              <p id="resSummary" class="mb-2"></p>
-              <div id="resThreat"></div>
-            </div>
-          </div>
-        </div>
+  <!-- Right: Message Feed -->
+  <div class="lg:col-span-2">
+    <div class="glass p-6 rounded-2xl">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold flex items-center gap-2">
+          <i class="fas fa-stream text-neon-green"></i>
+          {{ t['message_feed'] }}
+        </h2>
+        <span class="px-3 py-1 rounded-full bg-neon-green/20 text-neon-green text-sm font-bold">
+          {{ data|length }} хабарлама
+        </span>
       </div>
-    </div>
 
-    <!-- Message Feed Section (Right) -->
-    <div class="message-feed-section">
-      <div class="card">
-        <div class="card-header">
-          <i class="fas fa-stream"></i>
-          {{ t.message_feed }}
-        </div>
-        <div class="card-body">
-          <div class="table-wrapper">
-            <table id="messageTable" class="table table-hover table-sm mb-0">
-              <thead>
-                <tr>
-                  <th>{{ t.source }}</th>
-                  <th>{{ t.date }}</th>
-                  <th>{{ t.text }}</th>
-                  <th>{{ t.io_type }}</th>
-                  <th>{{ t.emo_eval }}</th>
-                  <th>{{ t.fake_claim }}</th>
-                  <th>Әрекет</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in data %}
-                <tr class="clickable-row" data-id="{{ item.id }}" data-source="{{ item.source or '—' }}"
-                  data-date="{{ item.date or '—' }}" data-text="{{ item.text or '—' }}"
-                  data-io="{{ item.io_type or '—' }}" data-emo="{{ item.emo_eval or '—' }}"
-                  data-fake="{{ item.fake_claim or '—' }}">
-                  <td>{{ item.source or '—' }}</td>
-                  <td>{{ item.date[:16] if item.date else '—' }}</td>
-                  <td><span class="text-preview">{{ item.text or '—' }}</span></td>
-                  <td>
-                    {% if item.io_type %}
-                    <span class="type-badge type-{{ item.io_type.lower().replace(' ', '_') }}">
-                      {{ item.io_type }}
-                    </span>
-                    {% else %}
-                    —
-                    {% endif %}
-                  </td>
-                  <td>{{ item.emo_eval or '—' }}</td>
-                  <td>
-                    {% if item.fake_claim == 'True' %}
-                    <span class="badge bg-danger">{{ t.true }}</span>
-                    {% elif item.fake_claim == 'False' %}
-                    <span class="badge bg-success">{{ t.false }}</span>
-                    {% else %}
-                    —
-                    {% endif %}
-                  </td>
-                  <td>
-                    <button class="btn btn-sm btn-danger delete-btn" data-id="{{ item.id }}">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Message Analysis Panel (Full Width) -->
-    <div class="admin-grid-full">
-      <div class="card analysis-panel">
-        <div class="card-header">
-          <i class="fas fa-magnifying-glass-chart"></i>
-          {{ t.message_analysis }}
-        </div>
-        <div class="card-body">
-          <div id="analysisContent" class="analysis-content empty">
-            <i class="fas fa-hand-pointer"></i>
-            <p>Хабарламаны таңдаңыз</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Terms Link (Full Width) -->
-    <div class="admin-grid-full">
-      <div class="card text-center">
-        <div class="card-body">
-          <h5 class="card-title">
-            <i class="fas fa-book"></i>
-            {{ t.thesaurus }}
-          </h5>
-          <p class="card-text text-muted">
-            Терминдер базасын тезаурус бетінде өңдеуге болады
-          </p>
-          <a href="{{ url_for('thesaurus_page') }}" class="btn btn-primary">
-            <i class="fas fa-arrow-right"></i>
-            Тезаурусқа өту
-          </a>
-        </div>
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table id="messageTable" class="w-full">
+          <thead>
+            <tr class="text-left text-xs text-gray-400 uppercase tracking-wider">
+              <th class="pb-3">{{ t['source'] }}</th>
+              <th class="pb-3">{{ t['date'] }}</th>
+              <th class="pb-3">{{ t['text'] }}</th>
+              <th class="pb-3">{{ t['io_type'] }}</th>
+              <th class="pb-3">Эмоция</th>
+              <th class="pb-3">Фейк</th>
+              <th class="pb-3">Әрекет</th>
+            </tr>
+          </thead>
+          <tbody class="space-y-2">
+            {% for item in data %}
+            <tr class="group cursor-pointer" data-id="{{ item.id }}" data-source="{{ item.source or '—' }}"
+              data-date="{{ item.date or '—' }}" data-text="{{ item.text or '—' }}" data-io="{{ item.io_type or '—' }}"
+              data-emo="{{ item.emo_eval or '—' }}" data-fake="{{ item.fake_claim or '—' }}">
+              <td class="py-3 rounded-l-xl bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+                <span class="text-sm">{{ item.source or '—' }}</span>
+              </td>
+              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+                <span class="text-xs text-gray-400">{{ item.date[:16] if item.date else '—' }}</span>
+              </td>
+              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+                <span class="text-sm truncate max-w-xs block">{{ item.text[:50] if item.text else '—' }}...</span>
+              </td>
+              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+                {% if item.io_type %}
+                <span
+                  class="px-2 py-1 rounded-lg bg-neon-purple/20 text-neon-purple text-xs font-bold border border-neon-purple/30">
+                  {{ item.io_type[:15] }}
+                </span>
+                {% else %}
+                <span class="text-gray-500">—</span>
+                {% endif %}
+              </td>
+              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+                <span class="text-sm">{{ item.emo_eval or '—' }}</span>
+              </td>
+              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+                {% if item.fake_claim == 'True' %}
+                <span
+                  class="px-2 py-1 rounded-lg bg-neon-red/20 text-neon-red text-xs font-bold border border-neon-red/30">
+                  {{ t['true'] }}
+                </span>
+                {% elif item.fake_claim == 'False' %}
+                <span
+                  class="px-2 py-1 rounded-lg bg-neon-green/20 text-neon-green text-xs font-bold border border-neon-green/30">
+                  {{ t['false'] }}
+                </span>
+                {% else %}
+                <span class="text-gray-500">—</span>
+                {% endif %}
+              </td>
+              <td class="py-3 rounded-r-xl bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+                <button
+                  class="delete-btn px-3 py-1 rounded-lg bg-neon-red/20 hover:bg-neon-red/30 text-neon-red transition-colors text-xs"
+                  data-id="{{ item.id }}">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Loading Overlay -->
-<div id="loadingOverlay" class="loading-overlay">
-  <div class="loading-content">
-    <div class="spinner"></div>
-    <h5>{{ t.analyzing }}</h5>
-    <p class="text-muted mb-0">Күте тұрыңыз...</p>
+<!-- Message Analysis Panel -->
+<div class="glass p-6 rounded-2xl">
+  <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+    <i class="fas fa-magnifying-glass-chart text-neon-cyan"></i>
+    {{ t['message_analysis'] }}
+  </h2>
+  <div id="analysisContent" class="min-h-[200px] flex items-center justify-center">
+    <div class="text-center text-gray-500">
+      <i class="fas fa-hand-pointer text-4xl mb-3 opacity-30"></i>
+      <p>Хабарламаны таңдаңыз</p>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -531,142 +216,6 @@
 {% block extra_js %}
 <script>
   $(document).ready(function () {
-    // Initialize DataTable
-    const table = $('#messageTable').DataTable({
-      order: [[1, 'desc']], // Sort by date
-      pageLength: 25,
-      language: {
-        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/kk.json'
-      }
-    });
-
-    // Row click handler
-    $('#messageTable tbody').on('click', 'tr', function (e) {
-      // Ignore if clicked on delete button
-      if ($(e.target).closest('.delete-btn').length) return;
-
-      // Remove previous selection
-      $('#messageTable tbody tr').removeClass('selected');
-      $(this).addClass('selected');
-
-      // Get data
-      const data = {
-        id: $(this).data('id'),
-        source: $(this).data('source'),
-        date: $(this).data('date'),
-        text: $(this).data('text'),
-        io: $(this).data('io'),
-        emo: $(this).data('emo'),
-        fake: $(this).data('fake')
-      };
-
-      // Display in analysis panel
-      displayMessageAnalysis(data);
-    });
-
-    // Display message analysis
-    function displayMessageAnalysis(data) {
-      const content = $('#analysisContent');
-      content.removeClass('empty');
-
-      // Determine fake badge class
-      let fakeClass = 'bg-secondary';
-      if (data.fake === 'True') fakeClass = 'bg-danger';
-      else if (data.fake === 'False') fakeClass = 'bg-success';
-
-      // Determine emotion class
-      let emoClass = '';
-      if (data.emo && data.emo.toLowerCase().includes('positive')) emoClass = 'success';
-      else if (data.emo && data.emo.toLowerCase().includes('negative')) emoClass = 'danger';
-
-      content.html(`
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Дереккөз</div>
-                        <div class="info-value">${data.source}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Күні</div>
-                        <div class="info-value">${data.date}</div>
-                    </div>
-                    <div class="info-item ${data.io !== '—' ? '' : 'warning'}">
-                        <div class="info-label">IO түрі</div>
-                        <div class="info-value">${data.io}</div>
-                    </div>
-                    <div class="info-item ${emoClass}">
-                        <div class="info-label">Эмоция</div>
-                        <div class="info-value">${data.emo}</div>
-                    </div>
-                    <div class="info-item ${data.fake === 'True' ? 'danger' : ''}">
-                        <div class="info-label">Фейк деректеме</div>
-                        <div class="info-value">
-                            <span class="badge ${fakeClass}">${data.fake}</span>
-                        </div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">ID</div>
-                        <div class="info-value">#${data.id}</div>
-                    </div>
-                </div>
-                <div>
-                    <h6 class="mb-2"><i class="fas fa-align-left"></i> Мәтін:</h6>
-                    <div class="message-text-box">${data.text}</div>
-                </div>
-            `);
-
-      // Scroll to analysis panel
-      $('html, body').animate({
-        scrollTop: content.offset().top - 100
-      }, 400);
-    }
-
-    // Delete button handler
-    $('.delete-btn').on('click', function (e) {
-      e.stopPropagation();
-      const id = $(this).data('id');
-
-      Swal.fire({
-        title: '{{ t.confirm_delete }}?',
-        text: 'Бұл әрекетті қайтару мүмкін емес',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: '{{ t.yes }}, өшіру',
-        cancelButtonText: '{{ t.cancel }}'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          deleteRecord(id);
-        }
-      });
-    });
-
-    // Delete record function
-    function deleteRecord(id) {
-      $.ajax({
-        url: `/delete/${id}`,
-        method: 'POST',
-        success: function () {
-          Swal.fire({
-            icon: 'success',
-            title: '{{ t.success }}',
-            text: 'Жазба өшірілді',
-            timer: 2000,
-            showConfirmButton: false
-          });
-          // Remove row from table
-          table.row($(`tr[data-id="${id}"]`)).remove().draw();
-        },
-        error: function () {
-          Swal.fire({
-            icon: 'error',
-            title: '{{ t.error }}',
-            text: 'Жазба өшірілмеді'
-          });
-        }
-      });
-    }
-
     // Analysis form submission
     $('#analysisForm').on('submit', function (e) {
       e.preventDefault();
@@ -676,15 +225,10 @@
       let date = $('#dateInput').val();
 
       if (!text) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Мәтін енгізіңіз',
-          text: 'Талдау үшін мәтін міндетті'
-        });
+        Utils.showError('Мәтін енгізіңіз', 'Талдау үшін мәтін міндетті');
         return;
       }
 
-      // Set current date if empty
       if (!date) {
         const now = new Date();
         date = now.toISOString().slice(0, 19);
@@ -692,44 +236,25 @@
         date = date.replace('T', ' ') + ':00';
       }
 
-      // Show loading
-      $('#loadingOverlay').addClass('show');
+      Utils.showLoading('{{ t["analyzing"] }}');
 
-      // Send request
       $.ajax({
-        url: '/api/analyze',
+        url: '/analyze',
         method: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({
-          text: text,
-          channel: channel,
-          date: date
-        }),
+        data: JSON.stringify({ text, channel, date }),
         success: function (data) {
-          $('#loadingOverlay').removeClass('show');
+          Utils.hideLoading();
           displayAnalysisResults(data);
-
-          // Add to table
-          addRowToTable(data);
-
-          // Show success
-          Swal.fire({
-            icon: 'success',
-            title: '{{ t.analysis_complete }}',
-            timer: 2000,
-            showConfirmButton: false
-          });
-
-          // Clear form
+          Utils.showSuccess('{{ t["analysis_complete"] }}');
           $('#textInput').val('');
+
+          // Add to table (reload page for simplicity)
+          setTimeout(() => location.reload(), 2000);
         },
         error: function (xhr) {
-          $('#loadingOverlay').removeClass('show');
-          Swal.fire({
-            icon: 'error',
-            title: '{{ t.error }}',
-            text: xhr.responseJSON?.detail || 'Талдау сәтсіз аяқталды'
-          });
+          Utils.hideLoading();
+          Utils.showError(xhr.responseJSON?.detail || 'Талдау сәтсіз аяқталды');
         }
       });
     });
@@ -743,36 +268,32 @@
       $('#resIOType').text(analysis.predicted_info_operation_type || '—');
 
       // Fake Claim
-      const fakeText = analysis.is_anomaly ? '{{ t.true }}' : '{{ t.false }}';
-      const fakeClass = analysis.is_anomaly ? 'bg-danger' : 'bg-success';
-      $('#resFakeClaim').text(fakeText).removeClass().addClass(`badge ${fakeClass}`);
+      const fakeText = analysis.is_anomaly ? '{{ t["true"] }}' : '{{ t["false"] }}';
+      const fakeClass = analysis.is_anomaly ? 'text-neon-red' : 'text-neon-green';
+      $('#resFakeClaim').html(`<span class="${fakeClass} font-bold">${fakeText}</span>`);
 
       // Emotion
-      $('#resEmotion').html(`
-                <span class="badge bg-${sentiment.label.includes('POSITIVE') ? 'success' : sentiment.label.includes('NEGATIVE') ? 'danger' : 'secondary'}">
-                    ${sentiment.label}
-                </span>
-                <small class="text-muted">(${(sentiment.score * 100).toFixed(1)}%)</small>
-            `);
+      const emoClass = sentiment.label.includes('POSITIVE') ? 'text-neon-green' : sentiment.label.includes('NEGATIVE') ? 'text-neon-red' : 'text-gray-400';
+      $('#resEmotion').html(`<span class="${emoClass} font-bold">${sentiment.label}</span> <span class="text-xs text-gray-500">(${(sentiment.score * 100).toFixed(1)}%)</span>`);
 
       // Entities
       if (analysis.named_entities_recognition.length > 0) {
         const entities = analysis.named_entities_recognition.map(e =>
-          `<span class="entity-badge">${e.word} <small>(${e.entity})</small></span>`
+          `<span class="px-2 py-1 rounded-lg bg-neon-cyan/20 text-neon-cyan text-xs font-bold border border-neon-cyan/30">${e.word} <span class="opacity-50">(${e.entity})</span></span>`
         ).join(' ');
         $('#resEntities').html(entities);
       } else {
-        $('#resEntities').html('<small class="text-muted">Атаулар табылмады</small>');
+        $('#resEntities').html('<span class="text-gray-500 text-xs">Атаулар табылмады</span>');
       }
 
       // Terms
       if (analysis.military_terms_analysis.length > 0) {
         const terms = analysis.military_terms_analysis.map(t =>
-          `<span class="term-badge" title="${t.matched_alias}">${t.term_kz || t.term_ru || t.term_en}</span>`
+          `<span class="px-2 py-1 rounded-lg bg-neon-green/20 text-neon-green text-xs font-bold border border-neon-green/30" title="${t.matched_alias}">${t.term_kz || t.term_ru || t.term_en}</span>`
         ).join(' ');
         $('#resTerms').html(terms);
       } else {
-        $('#resTerms').html('<small class="text-muted">Терминдер табылмады</small>');
+        $('#resTerms').html('<span class="text-gray-500 text-xs">Терминдер табылмады</span>');
       }
 
       // LLM Summary
@@ -781,48 +302,102 @@
 
       // Threat Level
       const threat = llm.threat_level || 0;
-      let threatClass = 'threat-level-1';
+      let threatColor = 'text-neon-green';
       let threatIcon = 'shield-halved';
       if (threat >= 4) {
-        threatClass = 'threat-level-5';
+        threatColor = 'text-neon-red';
         threatIcon = 'skull';
       } else if (threat === 3) {
-        threatClass = 'threat-level-3';
+        threatColor = 'text-yellow-500';
         threatIcon = 'triangle-exclamation';
       }
 
       $('#resThreat').html(`
-                <div class="threat-level ${threatClass}">
+                <div class="flex items-center gap-2 ${threatColor}">
                     <i class="fas fa-${threatIcon}"></i>
-                    <span>Қауіп деңгейі: ${threat}/5</span>
+                    <span class="font-bold">Қауіп деңгейі: ${threat}/5</span>
                 </div>
             `);
 
       // Show results
-      $('#analysisResults').addClass('show');
+      $('#analysisResults').removeClass('hidden');
     }
 
-    // Add row to table
-    function addRowToTable(data) {
-      const analysis = data.analysis_report;
-      const rowData = [
-        data.source_info.channel,
-        data.source_info.date.slice(0, 16),
-        `<span class="text-preview">${data.original_text}</span>`,
-        `<span class="type-badge">${analysis.predicted_info_operation_type}</span>`,
-        analysis.general_sentiment.label,
-        analysis.is_anomaly ?
-          '<span class="badge bg-danger">{{ t.true }}</span>' :
-          '<span class="badge bg-success">{{ t.false }}</span>',
-        '<button class="btn btn-sm btn-secondary" disabled><i class="fas fa-hourglass"></i></button>'
-      ];
+    // Row click handler
+    $('#messageTable tbody tr').on('click', function (e) {
+      if ($(e.target).closest('.delete-btn').length) return;
 
-      // Add row to top
-      table.row.add(rowData).draw(false);
+      $('#messageTable tbody tr').removeClass('!bg-neon-purple/20');
+      $(this).addClass('!bg-neon-purple/20');
 
-      // Scroll to top
-      $('#messageTable').closest('.dataTables_wrapper').find('.dataTables_scrollBody').scrollTop(0);
+      const data = {
+        source: $(this).data('source'),
+        date: $(this).data('date'),
+        text: $(this).data('text'),
+        io: $(this).data('io'),
+        emo: $(this).data('emo'),
+        fake: $(this).data('fake')
+      };
+
+      displayMessageAnalysis(data);
+    });
+
+    // Display message analysis
+    function displayMessageAnalysis(data) {
+      const fakeClass = data.fake === 'True' ? 'text-neon-red' : data.fake === 'False' ? 'text-neon-green' : 'text-gray-400';
+
+      $('#analysisContent').html(`
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                    <div class="glass p-4 rounded-xl">
+                        <div class="text-xs text-gray-400 mb-1">Дереккөз</div>
+                        <div class="font-bold">${data.source}</div>
+                    </div>
+                    <div class="glass p-4 rounded-xl">
+                        <div class="text-xs text-gray-400 mb-1">Күні</div>
+                        <div class="font-bold">${data.date}</div>
+                    </div>
+                    <div class="glass p-4 rounded-xl">
+                        <div class="text-xs text-gray-400 mb-1">IO түрі</div>
+                        <div class="font-bold text-neon-purple">${data.io}</div>
+                    </div>
+                    <div class="glass p-4 rounded-xl">
+                        <div class="text-xs text-gray-400 mb-1">Эмоция</div>
+                        <div class="font-bold">${data.emo}</div>
+                    </div>
+                    <div class="glass p-4 rounded-xl">
+                        <div class="text-xs text-gray-400 mb-1">Фейк деректеме</div>
+                        <div class="font-bold ${fakeClass}">${data.fake}</div>
+                    </div>
+                    <div class="glass p-4 rounded-xl col-span-1 md:col-span-3">
+                        <div class="text-xs text-gray-400 mb-2">Мәтін</div>
+                        <div class="text-sm leading-relaxed">${data.text}</div>
+                    </div>
+                </div>
+            `);
     }
+
+    // Delete button handler
+    $('.delete-btn').on('click', function (e) {
+      e.stopPropagation();
+      const id = $(this).data('id');
+
+      Swal.fire({
+        title: '{{ t["confirm_delete"] }}?',
+        text: 'Бұл әрекетті қайтару мүмкін емес',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: '{{ t["yes"] }}, өшіру',
+        cancelButtonText: '{{ t["cancel"] }}',
+        background: '#1E293B',
+        color: '#F1F5F9'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.post(`/delete/${id}`, () => location.reload());
+        }
+      });
+    });
   });
 </script>
 {% endblock %}

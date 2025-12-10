@@ -1,529 +1,206 @@
 {% extends "base.html" %}
 
-{% block title %}{{ t.thesaurus }} - {{ t.app_title }}{% endblock %}
-
-{% block extra_css %}
-<style>
-    .thesaurus-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .thesaurus-grid-full {
-        grid-column: 1 / -1;
-    }
-
-    /* Search Section */
-    .search-section {
-        position: sticky;
-        top: 20px;
-    }
-
-    .search-form-group {
-        margin-bottom: 1rem;
-    }
-
-    .datalist-wrapper {
-        position: relative;
-    }
-
-    .datalist-wrapper input {
-        width: 100%;
-    }
-
-    /* Results Section */
-    .results-section {
-        display: none;
-        animation: fadeIn 0.4s ease;
-    }
-
-    .results-section.show {
-        display: block;
-    }
-
-    .language-tab-list {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid var(--border);
-        padding-bottom: 0;
-    }
-
-    .language-tab {
-        padding: 0.8rem 1.5rem;
-        background: transparent;
-        border: none;
-        border-bottom: 3px solid transparent;
-        color: var(--text-muted);
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-
-    .language-tab:hover {
-        color: var(--primary);
-    }
-
-    .language-tab.active {
-        color: var(--success);
-        border-bottom-color: var(--success);
-    }
-
-    .language-content {
-        display: none;
-        animation: fadeIn 0.3s ease;
-    }
-
-    .language-content.active {
-        display: block;
-    }
-
-    .term-header {
-        background: linear-gradient(135deg, var(--primary), var(--primary-light));
-        color: white;
-        padding: 1.5rem;
-        border-radius: 12px 12px 0 0;
-        margin: -1.5rem -1.5rem 1.5rem -1.5rem;
-    }
-
-    .term-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-    .term-language-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 20px;
-        font-size: 0.9rem;
-    }
-
-    /* Scope Notes */
-    .scope-notes-box {
-        background: var(--success-light);
-        border-left: 4px solid var(--success);
-        padding: 1.2rem;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-    }
-
-    .scope-notes-box h6 {
-        color: var(--success-dark);
-        margin-bottom: 0.8rem;
-        font-weight: 600;
-    }
-
-    .scope-note-item {
-        background: white;
-        padding: 0.8rem;
-        border-radius: 6px;
-        margin-bottom: 0.5rem;
-        line-height: 1.6;
-    }
-
-    /* Relations Grid */
-    .relations-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1rem;
-        margin-top: 1.5rem;
-    }
-
-    .relation-card {
-        background: var(--bg-main);
-        border: 2px solid var(--border);
-        border-radius: 10px;
-        padding: 1.2rem;
-        transition: all 0.3s;
-    }
-
-    .relation-card:hover {
-        border-color: var(--success);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
-        transform: translateY(-2px);
-    }
-
-    .relation-type-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 1rem;
-        padding-bottom: 0.8rem;
-        border-bottom: 2px solid var(--border);
-    }
-
-    .relation-type-icon {
-        width: 32px;
-        height: 32px;
-        background: var(--success);
-        color: white;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
-    }
-
-    .relation-type-title {
-        font-weight: 600;
-        color: var(--primary);
-        font-size: 0.95rem;
-    }
-
-    .relation-items {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .relation-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.6rem 0.8rem;
-        margin-bottom: 0.5rem;
-        background: white;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .relation-item:hover {
-        background: var(--success-light);
-        transform: translateX(5px);
-    }
-
-    .relation-term-name {
-        flex: 1;
-        color: var(--text-main);
-        font-weight: 500;
-    }
-
-    .relation-lang-badge {
-        padding: 3px 10px;
-        background: var(--primary);
-        color: white;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .empty-relations {
-        text-align: center;
-        padding: 1.5rem;
-        color: var(--text-muted);
-        font-style: italic;
-    }
-
-    /* Add Form Section */
-    .relationship-options {
-        background: var(--bg-main);
-        border-radius: 10px;
-        padding: 1.2rem;
-        margin-top: 1rem;
-    }
-
-    .relationship-options h6 {
-        color: var(--primary);
-        margin-bottom: 1rem;
-        font-weight: 600;
-    }
-
-    .relationship-help {
-        background: #e0f2fe;
-        border-left: 4px solid #0ea5e9;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-top: 1rem;
-    }
-
-    .relationship-help-title {
-        color: #0369a1;
-        font-weight: 600;
-        margin-bottom: 0.8rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .relationship-help ul {
-        margin: 0;
-        padding-left: 1.2rem;
-    }
-
-    .relationship-help li {
-        margin-bottom: 0.5rem;
-        line-height: 1.5;
-    }
-
-    .relationship-help strong {
-        color: #0369a1;
-    }
-
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: var(--text-muted);
-    }
-
-    .empty-state i {
-        font-size: 4rem;
-        opacity: 0.2;
-        margin-bottom: 1rem;
-    }
-
-    .empty-state h5 {
-        margin-bottom: 0.5rem;
-    }
-
-    /* Loading */
-    .loading-inline {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid var(--border);
-        border-top-color: var(--success);
-        border-radius: 50%;
-        animation: spin 0.6s linear infinite;
-        margin-left: 8px;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* Responsive */
-    @media (max-width: 1200px) {
-        .thesaurus-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .search-section {
-            position: static;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .relations-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .language-tab-list {
-            overflow-x: auto;
-            flex-wrap: nowrap;
-        }
-    }
-</style>
-{% endblock %}
+{% block title %}{{ t['thesaurus'] }} - {{ t['app_title'] }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="mb-4">
-        <h1 class="h3 mb-1">
-            <i class="fas fa-book"></i>
-            {{ t.military_thesaurus }}
-        </h1>
-        <p class="text-muted">Әскери терминдер базасын басқару және өңдеу</p>
+<!-- Header -->
+<div class="mb-8">
+    <h1
+        class="text-4xl font-display font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-cyan">
+        <i class="fas fa-book mr-3"></i>
+        {{ t['military_thesaurus'] }}
+    </h1>
+    <p class="text-gray-400">Әскери терминдер базасын басқару және өңдеу</p>
+</div>
+
+<!-- Main Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+    <!-- Search Section -->
+    <div class="lg:col-span-1">
+        <div class="glass p-6 rounded-2xl sticky top-24 space-y-6">
+            <!-- Search Form -->
+            <div>
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i class="fas fa-search text-neon-green"></i>
+                    {{ t['search_term'] }}
+                </h2>
+
+                <form id="searchForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['term'] }}</label>
+                        <input type="text" id="searchTerm" list="existing-terms"
+                            placeholder="Military operation, Дрон, Барлау..."
+                            class="w-full px-4 py-3 bg-space-light/50 border-2 border-neon-green/30 rounded-xl text-white placeholder-gray-500 focus:border-neon-green focus:shadow-neon-green focus:outline-none transition-all"
+                            required>
+                        <datalist id="existing-terms">
+                            {% if all_terms %}
+                            {% for term_name in all_terms %}
+                            <option value="{{ term_name }}">
+                                {% endfor %}
+                                {% endif %}
+                        </datalist>
+                        <small class="text-gray-400 text-xs mt-1 block">Терминді енгізіп, Enter басыңыз</small>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['language'] }}</label>
+                        <select id="searchLanguage"
+                            class="w-full px-4 py-3 bg-space-light/50 border-2 border-neon-green/30 rounded-xl text-white focus:border-neon-green focus:outline-none transition-all">
+                            <option value="EN">🇬🇧 English (EN)</option>
+                            <option value="RU">🇷🇺 Русский (RU)</option>
+                            <option value="KZ" selected>🇰🇿 Қазақша (KZ)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full btn-glow py-3 rounded-xl font-bold bg-gradient-to-r from-neon-green to-neon-cyan hover:shadow-neon-green transition-all text-white flex items-center justify-center gap-2 group">
+                        <i class="fas fa-search"></i>
+                        <span>{{ t['search'] }}</span>
+                        <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Stats -->
+            <div class="pt-4 border-t border-neon-green/20">
+                <h3 class="text-sm font-bold mb-3 text-gray-300 flex items-center gap-2">
+                    <i class="fas fa-chart-simple"></i>
+                    Статистика
+                </h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass p-3 rounded-xl text-center border border-neon-green/20">
+                        <div class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-green-400"
+                            id="totalTerms">0</div>
+                        <div class="text-xs text-gray-400 mt-1">Терминдер</div>
+                    </div>
+                    <div class="glass p-3 rounded-xl text-center border border-neon-cyan/20">
+                        <div class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-blue-400"
+                            id="totalRelations">0</div>
+                        <div class="text-xs text-gray-400 mt-1">Қатынастар</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="thesaurus-grid">
-        <!-- Search Section (Left) -->
-        <div class="search-section">
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-search"></i>
-                    {{ t.search_term }}
-                </div>
-                <div class="card-body">
-                    <form id="searchForm">
-                        <div class="search-form-group">
-                            <label for="searchTerm" class="form-label">{{ t.term }}</label>
-                            <div class="datalist-wrapper">
-                                <input type="text" class="form-control" id="searchTerm" name="term"
-                                    list="existing-terms" placeholder="Military operation, Дрон, Барлау..." required>
-                                <datalist id="existing-terms">
-                                    {% if all_terms %}
-                                    {% for term_name in all_terms %}
-                                    <option value="{{ term_name }}">
-                                        {% endfor %}
-                                        {% endif %}
-                                </datalist>
-                            </div>
-                            <small class="text-muted">Терминді енгізіп, Enter басыңыз</small>
-                        </div>
+    <!-- Add Term Section -->
+    <div class="lg:col-span-2">
+        <div class="glass p-6 rounded-2xl">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i class="fas fa-plus-circle text-neon-cyan"></i>
+                {{ t['add_term'] }}
+            </h2>
 
-                        <div class="search-form-group">
-                            <label for="searchLanguage" class="form-label">{{ t.language }}</label>
-                            <select class="form-select" id="searchLanguage" name="language">
-                                <option value="EN">🇬🇧 English (EN)</option>
-                                <option value="RU">🇷🇺 Русский (RU)</option>
-                                <option value="KZ" selected>🇰🇿 Қазақша (KZ)</option>
+            <form id="addForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['term_name'] }}</label>
+                        <input type="text" id="newTerm" placeholder="Жаңа термин атауы"
+                            class="w-full px-4 py-3 bg-space-light/50 border-2 border-neon-cyan/30 rounded-xl text-white placeholder-gray-500 focus:border-neon-cyan focus:shadow-neon-cyan focus:outline-none transition-all"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['language'] }}</label>
+                        <select id="newLanguage"
+                            class="w-full px-4 py-3 bg-space-light/50 border-2 border-neon-cyan/30 rounded-xl text-white focus:border-neon-cyan focus:outline-none transition-all">
+                            <option value="EN">🇬🇧 English (EN)</option>
+                            <option value="RU">🇷🇺 Русский (RU)</option>
+                            <option value="KZ">🇰🇿 Қазақша (KZ)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['scope_note'] }} (Опционалды)</label>
+                    <textarea id="scopeNote" rows="3" placeholder="Терминнің сипаттамасы немесе анықтамасы..."
+                        class="w-full px-4 py-3 bg-space-light/50 border-2 border-neon-cyan/30 rounded-xl text-white placeholder-gray-500 focus:border-neon-cyan focus:shadow-neon-cyan focus:outline-none transition-all resize-none"></textarea>
+                </div>
+
+                <!-- Relationship Options -->
+                <div class="glass p-4 rounded-xl border border-neon-purple/20">
+                    <h3 class="text-sm font-bold mb-3 text-neon-purple flex items-center gap-2">
+                        <i class="fas fa-link"></i>
+                        Қатынас қосу (Опционалды)
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold mb-2 text-gray-400">Қатынас түрі</label>
+                            <select id="relationType"
+                                class="w-full px-3 py-2 text-sm bg-space-light/50 border border-neon-purple/30 rounded-lg text-white focus:border-neon-purple focus:outline-none transition-all">
+                                <option value="">-- Таңдаңыз --</option>
+                                <option value="BT">BT - Broader Term (Кеңірек термин)</option>
+                                <option value="NT">NT - Narrower Term (Тарырақ термин)</option>
+                                <option value="RT">RT - Related Term (Байланысты)</option>
+                                <option value="UF">UF - Used For (Синоним)</option>
+                                <option value="PT">PT - Part Of (Бөлігі)</option>
+                                <option value="LE">LE - Language Equivalent (Эквивалент)</option>
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="fas fa-search"></i>
-                            {{ t.search }}
-                        </button>
-                    </form>
+                        <div>
+                            <label class="block text-xs font-bold mb-2 text-gray-400">Байланысты термин</label>
+                            <input type="text" id="relatedTerm" list="existing-terms-add"
+                                placeholder="Бар терминді таңдаңыз..."
+                                class="w-full px-3 py-2 text-sm bg-space-light/50 border border-neon-purple/30 rounded-lg text-white focus:border-neon-purple focus:outline-none transition-all">
+                            <datalist id="existing-terms-add">
+                                {% if all_terms %}
+                                {% for term_name in all_terms %}
+                                <option value="{{ term_name }}">
+                                    {% endfor %}
+                                    {% endif %}
+                            </datalist>
+                        </div>
+                    </div>
 
-                    <!-- Quick Stats -->
-                    <div class="mt-4 pt-3 border-top">
-                        <h6 class="text-muted mb-3">
-                            <i class="fas fa-chart-simple"></i>
-                            Статистика
-                        </h6>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <div class="text-center p-2 bg-light rounded">
-                                    <div class="h5 mb-0 text-success" id="totalTerms">0</div>
-                                    <small class="text-muted">Терминдер</small>
+                    <!-- Help Info -->
+                    <div class="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-circle-info text-blue-400 mt-0.5"></i>
+                            <div class="text-xs text-gray-400">
+                                <div class="font-bold text-blue-400 mb-1">Қатынас түрлері:</div>
+                                <div class="space-y-0.5">
+                                    <div><strong>BT:</strong> Бұл термин неғұрлым нақты</div>
+                                    <div><strong>NT:</strong> Бұл термин неғұрлым жалпы</div>
+                                    <div><strong>RT:</strong> Концептуалды байланысты</div>
                                 </div>
                             </div>
-                            <div class="col-6">
-                                <div class="text-center p-2 bg-light rounded">
-                                    <div class="h5 mb-0 text-primary" id="totalRelations">0</div>
-                                    <small class="text-muted">Қатынастар</small>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <button type="submit"
+                    class="w-full btn-glow py-3 rounded-xl font-bold bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-neon-cyan transition-all text-white flex items-center justify-center gap-2 group">
+                    <i class="fas fa-plus"></i>
+                    <span>{{ t['add'] }} Термин</span>
+                    <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Search Results -->
+<div id="resultsSection" class="hidden">
+    <div class="glass p-6 rounded-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+                <i class="fas fa-list-check text-neon-green"></i>
+                Іздеу нәтижелері
+            </h2>
+            <button onclick="$('#resultsSection').addClass('hidden')"
+                class="px-3 py-1 rounded-lg bg-neon-red/20 hover:bg-neon-red/30 text-neon-red transition-colors text-sm">
+                <i class="fas fa-times"></i> Жабу
+            </button>
         </div>
 
-        <!-- Add Term Section (Right) -->
-        <div>
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-plus-circle"></i>
-                    {{ t.add_term }}
-                </div>
-                <div class="card-body">
-                    <form id="addForm">
-                        <div class="mb-3">
-                            <label for="newTerm" class="form-label">{{ t.term_name }}</label>
-                            <input type="text" class="form-control" id="newTerm" name="term"
-                                placeholder="Жаңа термин атауы" required>
-                        </div>
+        <!-- Language Tabs -->
+        <div id="languageTabs" class="flex gap-2 mb-6 border-b border-neon-green/20 pb-2"></div>
 
-                        <div class="mb-3">
-                            <label for="newLanguage" class="form-label">{{ t.language }}</label>
-                            <select class="form-select" id="newLanguage" name="language">
-                                <option value="EN">🇬🇧 English (EN)</option>
-                                <option value="RU">🇷🇺 Русский (RU)</option>
-                                <option value="KZ">🇰🇿 Қазақша (KZ)</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="scopeNote" class="form-label">{{ t.scope_note }} (Опционалды)</label>
-                            <textarea class="form-control" id="scopeNote" name="scope_note" rows="3"
-                                placeholder="Терминнің сипаттамасы немесе анықтамасы..."></textarea>
-                        </div>
-
-                        <!-- Relationship Options -->
-                        <div class="relationship-options">
-                            <h6>
-                                <i class="fas fa-link"></i>
-                                Қатынас қосу (Опционалды)
-                            </h6>
-
-                            <div class="mb-3">
-                                <label for="relationType" class="form-label">Қатынас түрі</label>
-                                <select class="form-select" id="relationType" name="relation_type">
-                                    <option value="">-- Таңдаңыз --</option>
-                                    <option value="BT">BT - Broader Term (Кеңірек термин)</option>
-                                    <option value="NT">NT - Narrower Term (Тарырақ термин)</option>
-                                    <option value="RT">RT - Related Term (Байланысты термин)</option>
-                                    <option value="UF">UF - Used For (Синоним)</option>
-                                    <option value="PT">PT - Part Of (Бөлігі)</option>
-                                    <option value="LE">LE - Language Equivalent (Тілдік эквивалент)</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="relatedTerm" class="form-label">Байланысты термин</label>
-                                <input type="text" class="form-control" id="relatedTerm" name="related_term"
-                                    list="existing-terms-add" placeholder="Бар терминді таңдаңыз...">
-                                <datalist id="existing-terms-add">
-                                    {% if all_terms %}
-                                    {% for term_name in all_terms %}
-                                    <option value="{{ term_name }}">
-                                        {% endfor %}
-                                        {% endif %}
-                                </datalist>
-                                <small class="text-muted">Формат: "термин (тіл)" немесе "термин"</small>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-plus"></i>
-                            {{ t.add }} Термин
-                        </button>
-                    </form>
-
-                    <!-- Relationship Help -->
-                    <div class="relationship-help">
-                        <div class="relationship-help-title">
-                            <i class="fas fa-circle-info"></i>
-                            Қатынас түрлері
-                        </div>
-                        <ul>
-                            <li><strong>BT:</strong> Бұл термин неғұрлым нақты</li>
-                            <li><strong>NT:</strong> Бұл термин неғұрлым жалпы</li>
-                            <li><strong>RT:</strong> Концептуалды байланысты</li>
-                            <li><strong>UF:</strong> Синоним немесе баламалы атау</li>
-                            <li><strong>PT:</strong> Үлкен терминнің бөлігі</li>
-                            <li><strong>LE:</strong> Басқа тілдегі эквивалент</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Results Section (Full Width) -->
-        <div class="thesaurus-grid-full">
-            <div id="resultsSection" class="results-section">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-list-check"></i>
-                        Іздеу нәтижелері
-                    </div>
-                    <div class="card-body">
-                        <!-- Language Tabs -->
-                        <div class="language-tab-list" id="languageTabs">
-                            <!-- Populated by JS -->
-                        </div>
-
-                        <!-- Language Content -->
-                        <div id="languageContent">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Language Content -->
+        <div id="languageContent"></div>
     </div>
 </div>
 {% endblock %}
@@ -531,7 +208,6 @@
 {% block extra_js %}
 <script>
     $(document).ready(function () {
-        // Load stats
         loadStats();
 
         // Search form
@@ -547,125 +223,95 @@
         });
     });
 
-    // Load statistics
     function loadStats() {
-        // Mock data - можно заменить на API call
-        animateNumber('totalTerms', {{ all_terms| length if all_terms else 0
-    }});
-    animateNumber('totalRelations', 450);
+        Utils.animateNumber('totalTerms', {{ all_terms| length if all_terms else 0
+    }}, 1000);
+    Utils.animateNumber('totalRelations', 450, 1000);
     }
 
-    // Animate number
-    function animateNumber(elementId, target) {
-        const element = document.getElementById(elementId);
-        let current = 0;
-        const increment = target / 30;
-        const timer = setInterval(() => {
-            current += increment;
-            if (current >= target) {
-                element.textContent = Math.round(target);
-                clearInterval(timer);
-            } else {
-                element.textContent = Math.round(current);
-            }
-        }, 30);
-    }
-
-    // Search term
     function searchTerm() {
         const term = $('#searchTerm').val().trim();
         const language = $('#searchLanguage').val();
 
         if (!term) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Термин енгізіңіз',
-                text: 'Іздеу үшін термин міндетті'
-            });
+            Utils.showError('Термин енгізіңіз', 'Іздеу үшін термин міндетті');
             return;
         }
 
-        // Show loading
-        const btn = $('#searchForm button[type="submit"]');
-        const btnText = btn.html();
-        btn.html('<span class="spinner-border spinner-border-sm"></span> Іздеу...').prop('disabled', true);
+        Utils.showLoading('Іздеу жүргізілуде...');
 
         $.ajax({
             url: `/thesaurus/search?term=${encodeURIComponent(term)}&language=${language}`,
             method: 'GET',
             success: function (data) {
-                btn.html(btnText).prop('disabled', false);
+                Utils.hideLoading();
                 displayResults(data);
             },
             error: function (xhr) {
-                btn.html(btnText).prop('disabled', false);
-                const error = xhr.responseJSON?.error || 'Термин табылмады';
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Қате',
-                    text: error
-                });
+                Utils.hideLoading();
+                Utils.showError(xhr.responseJSON?.error || 'Термин табылмады');
             }
         });
     }
 
-    // Display search results
     function displayResults(data) {
         if (!data.results || Object.keys(data.results).length === 0) {
-            $('#resultsSection').html(`
-                <div class="card">
-                    <div class="card-body">
-                        <div class="empty-state">
-                            <i class="fas fa-search"></i>
-                            <h5>Нәтиже табылмады</h5>
-                            <p>Басқа термин немесе тілді қолданып көріңіз</p>
-                        </div>
-                    </div>
-                </div>
-            `);
-            $('#resultsSection').addClass('show');
+            Utils.showError('Нәтиже табылмады', 'Басқа термин немесе тілді қолданып көріңіз');
             return;
         }
 
-        // Create language tabs
         const languages = Object.keys(data.results);
         let tabsHTML = '';
         let contentHTML = '';
 
         languages.forEach((lang, index) => {
             const langData = data.results[lang];
-            const isActive = index === 0 ? 'active' : '';
+            const isActive = index === 0;
 
             // Tab
             tabsHTML += `
-                <button class="language-tab ${isActive}" data-lang="${lang}">
+                <button class="px-4 py-2 rounded-lg font-bold transition-all ${isActive ? 'bg-gradient-to-r from-neon-green to-neon-cyan text-white shadow-neon-green' : 'bg-space-light/30 text-gray-400 hover:text-white'}" 
+                        data-lang="${lang}" 
+                        onclick="switchLanguageTab('${lang}')">
                     ${langData.term} (${lang})
                 </button>
             `;
 
             // Content
             contentHTML += `
-                <div class="language-content ${isActive}" data-lang="${lang}">
-                    <div class="term-header">
-                        <div class="term-title">${langData.term}</div>
-                        <span class="term-language-badge">${lang}</span>
+                <div class="language-content ${isActive ? '' : 'hidden'}" data-lang="${lang}">
+                    <!-- Header -->
+                    <div class="mb-6 p-6 rounded-xl bg-gradient-to-r from-neon-green/20 to-neon-cyan/20 border border-neon-green/30">
+                        <div class="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-cyan">
+                            ${langData.term}
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-neon-green/20 text-neon-green text-sm font-bold border border-neon-green/30">
+                            ${lang}
+                        </span>
                     </div>
 
                     ${langData.scope_notes && langData.scope_notes.length > 0 ? `
-                        <div class="scope-notes-box">
-                            <h6><i class="fas fa-info-circle"></i> Анықтама</h6>
-                            ${langData.scope_notes.map(note => note ? `<div class="scope-note-item">${note}</div>` : '').join('')}
+                        <div class="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                            <h3 class="text-sm font-bold mb-2 text-blue-400 flex items-center gap-2">
+                                <i class="fas fa-info-circle"></i>
+                                Анықтама
+                            </h3>
+                            ${langData.scope_notes.map(note => note ? `<p class="text-sm text-gray-400">${note}</p>` : '').join('')}
                         </div>
                     ` : ''}
 
-                    <h6 class="mb-3"><i class="fas fa-project-diagram"></i> Қатынастар</h6>
-                    <div class="relations-grid">
+                    <!-- Relations -->
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-project-diagram text-neon-purple"></i>
+                        Қатынастар
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         ${createRelationCard('BROADER_TERM', 'Кеңірек терминдер', 'sitemap', langData.relations?.BROADER_TERM)}
                         ${createRelationCard('NARROWER_TERM', 'Тарырақ терминдер', 'diagram-project', langData.relations?.NARROWER_TERM)}
-                        ${createRelationCard('RELATED_TERM', 'Байланысты терминдер', 'link', langData.relations?.RELATED_TERM)}
+                        ${createRelationCard('RELATED_TERM', 'Байланысты', 'link', langData.relations?.RELATED_TERM)}
                         ${createRelationCard('USED_FOR', 'Синонимдер', 'repeat', langData.relations?.USED_FOR)}
                         ${createRelationCard('PART_OF', 'Бөлігі', 'puzzle-piece', langData.relations?.PART_OF)}
-                        ${createRelationCard('LANGUAGE_EQUIVALENT', 'Тілдік эквиваленттер', 'language', langData.relations?.LANGUAGE_EQUIVALENT)}
+                        ${createRelationCard('LANGUAGE_EQUIVALENT', 'Эквиваленттер', 'language', langData.relations?.LANGUAGE_EQUIVALENT)}
                     </div>
                 </div>
             `;
@@ -673,42 +319,35 @@
 
         $('#languageTabs').html(tabsHTML);
         $('#languageContent').html(contentHTML);
-        $('#resultsSection').addClass('show');
+        $('#resultsSection').removeClass('hidden');
 
-        // Tab click handlers
-        $('.language-tab').on('click', function () {
-            const lang = $(this).data('lang');
-            $('.language-tab').removeClass('active');
-            $(this).addClass('active');
-            $('.language-content').removeClass('active');
-            $(`.language-content[data-lang="${lang}"]`).addClass('active');
-        });
-
-        // Relation item click (search related term)
-        $('.relation-item').on('click', function () {
-            const term = $(this).data('term');
-            const lang = $(this).data('lang');
-            if (term && lang) {
-                $('#searchTerm').val(term);
-                $('#searchLanguage').val(lang);
-                searchTerm();
-                $('html, body').animate({ scrollTop: 0 }, 400);
-            }
-        });
+        // Scroll to results
+        $('html, body').animate({
+            scrollTop: $('#resultsSection').offset().top - 100
+        }, 400);
     }
 
-    // Create relation card HTML
+    function switchLanguageTab(lang) {
+        $('.language-content').addClass('hidden');
+        $(`.language-content[data-lang="${lang}"]`).removeClass('hidden');
+
+        $('#languageTabs button').removeClass('bg-gradient-to-r from-neon-green to-neon-cyan text-white shadow-neon-green')
+            .addClass('bg-space-light/30 text-gray-400');
+        $(`#languageTabs button[data-lang="${lang}"]`).removeClass('bg-space-light/30 text-gray-400')
+            .addClass('bg-gradient-to-r from-neon-green to-neon-cyan text-white shadow-neon-green');
+    }
+
     function createRelationCard(type, title, icon, relations) {
         if (!relations || relations.length === 0 || !relations[0]?.term) {
             return `
-                <div class="relation-card">
-                    <div class="relation-type-header">
-                        <div class="relation-type-icon">
-                            <i class="fas fa-${icon}"></i>
+                <div class="glass p-4 rounded-xl border border-neon-purple/20">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple/20 to-neon-purple/10 flex items-center justify-center">
+                            <i class="fas fa-${icon} text-neon-purple text-sm"></i>
                         </div>
-                        <div class="relation-type-title">${title}</div>
+                        <h4 class="font-bold text-sm">${title}</h4>
                     </div>
-                    <div class="empty-relations">Жоқ</div>
+                    <p class="text-xs text-gray-500 text-center py-2">Жоқ</p>
                 </div>
             `;
         }
@@ -716,29 +355,26 @@
         const items = relations.map(rel => {
             if (!rel.term) return '';
             return `
-                <li class="relation-item" data-term="${rel.term}" data-lang="${rel.language}">
-                    <span class="relation-term-name">${rel.term}</span>
-                    <span class="relation-lang-badge">${rel.language || '?'}</span>
-                </li>
+                <div class="flex items-center justify-between p-2 rounded-lg bg-space-light/30 hover:bg-neon-purple/10 transition-colors cursor-pointer group">
+                    <span class="text-sm">${rel.term}</span>
+                    <span class="px-2 py-0.5 rounded bg-neon-purple/20 text-neon-purple text-xs font-bold border border-neon-purple/30">${rel.language || '?'}</span>
+                </div>
             `;
         }).join('');
 
         return `
-            <div class="relation-card">
-                <div class="relation-type-header">
-                    <div class="relation-type-icon">
-                        <i class="fas fa-${icon}"></i>
+            <div class="glass p-4 rounded-xl border border-neon-purple/20">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple to-purple-600 flex items-center justify-center">
+                        <i class="fas fa-${icon} text-white text-sm"></i>
                     </div>
-                    <div class="relation-type-title">${title}</div>
+                    <h4 class="font-bold text-sm">${title}</h4>
                 </div>
-                <ul class="relation-items">
-                    ${items}
-                </ul>
+                <div class="space-y-2">${items}</div>
             </div>
         `;
     }
 
-    // Add new term
     function addTerm() {
         const formData = {
             term: $('#newTerm').val().trim(),
@@ -749,20 +385,12 @@
         };
 
         if (!formData.term) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Термин атауы қажет',
-                text: 'Термин атауын енгізіңіз'
-            });
+            Utils.showError('Термин атауы қажет', 'Термин атауын енгізіңіз');
             return;
         }
 
-        // Show loading
-        const btn = $('#addForm button[type="submit"]');
-        const btnText = btn.html();
-        btn.html('<span class="spinner-border spinner-border-sm"></span> Қосылуда...').prop('disabled', true);
+        Utils.showLoading('Термин қосылуда...');
 
-        // Convert to FormData for backend
         const fd = new FormData();
         Object.keys(formData).forEach(key => {
             if (formData[key]) fd.append(key, formData[key]);
@@ -775,45 +403,15 @@
             processData: false,
             contentType: false,
             success: function (data) {
-                btn.html(btnText).prop('disabled', false);
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Сәтті!',
-                    text: data.success || 'Термин қосылды',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-
-                // Clear form
+                Utils.hideLoading();
+                Utils.showSuccess(data.success || 'Термин қосылды');
                 $('#addForm')[0].reset();
-
-                // Reload stats
                 loadStats();
-
-                // Update datalists if needed
-                if (data.all_terms) {
-                    updateDatalist(data.all_terms);
-                }
             },
             error: function (xhr) {
-                btn.html(btnText).prop('disabled', false);
-                const error = xhr.responseJSON?.error || 'Термин қосылмады';
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Қате',
-                    text: error
-                });
+                Utils.hideLoading();
+                Utils.showError(xhr.responseJSON?.error || 'Термин қосылмады');
             }
-        });
-    }
-
-    // Update datalist
-    function updateDatalist(terms) {
-        const datalists = $('#existing-terms, #existing-terms-add');
-        datalists.empty();
-        terms.forEach(term => {
-            datalists.append(`<option value="${term}">`);
         });
     }
 </script>

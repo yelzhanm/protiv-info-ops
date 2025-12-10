@@ -6,60 +6,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Ақпараттық операцияларға қарсы жүйе{% endblock %}</title>
 
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- DataTables -->
-    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
-    <!-- Custom CSS -->
-    <style>
-        :root {
-            /* Темно-синяя/серая основа */
-            --primary: #1e293b;
-            /* slate-800 */
-            --primary-light: #334155;
-            /* slate-700 */
-            --secondary: #475569;
-            /* slate-600 */
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap"
+        rel="stylesheet">
 
-            /* Зеленые акценты (безопасно) */
-            --success: #10b981;
-            /* emerald-500 */
-            --success-dark: #059669;
-            /* emerald-600 */
-            --success-light: #d1fae5;
-            /* emerald-200 */
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-            /* Красные акценты (угроза) */
-            --danger: #ef4444;
-            /* red-500 */
-            --danger-dark: #dc2626;
-            /* red-600 */
-            --danger-light: #fecaca;
-            /* red-200 */
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-            /* Оранжевые акценты (предупреждение) */
-            --warning: #f59e0b;
-            /* amber-500 */
-            --warning-dark: #d97706;
-            /* amber-600 */
-
-            /* Фон */
-            --bg-main: #f8fafc;
-            /* slate-50 */
-            --bg-card: #ffffff;
-            --text-main: #0f172a;
-            /* slate-900 */
-            --text-muted: #64748b;
-            /* slate-500 */
-            --border: #e2e8f0;
-            /* slate-200 */
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-purple': '#8B5CF6',
+                        'neon-blue': '#06B6D4',
+                        'neon-cyan': '#22D3EE',
+                        'neon-green': '#10B981',
+                        'neon-pink': '#EC4899',
+                        'neon-red': '#EF4444',
+                        'space-dark': '#0F172A',
+                        'space-darker': '#020617',
+                        'space-light': '#1E293B',
+                        'space-lighter': '#334155',
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'display': ['Space Grotesk', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neon-purple': '0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3)',
+                        'neon-cyan': '0 0 20px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.3)',
+                        'neon-green': '0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.3)',
+                        'glow': '0 0 15px rgba(139, 92, 246, 0.4)',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glow: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.5' },
+                        }
+                    }
+                }
+            }
         }
+    </script>
 
+    <style>
         * {
             margin: 0;
             padding: 0;
@@ -67,295 +78,311 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0F172A 50%, #1E293B 100%);
+            color: #F1F5F9;
             min-height: 100vh;
-            color: var(--text-main);
+            position: relative;
+            overflow-x: hidden;
         }
 
-        /* Navbar */
-        .navbar {
-            background: var(--bg-card) !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            padding: 1rem 0;
+        /* Анимированный фон с градиентами */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(34, 211, 238, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
         }
 
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--primary) !important;
-            font-size: 1.3rem;
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
-        .navbar-brand i {
-            color: var(--success);
+        /* Плавная прокрутка */
+        html {
+            scroll-behavior: smooth;
         }
 
-        /* Language Switcher */
-        .lang-switcher {
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 4px 12px;
-            font-size: 0.9rem;
-            transition: all 0.2s;
+        /* Кастомный скроллбар */
+        ::-webkit-scrollbar {
+            width: 10px;
         }
 
-        .lang-switcher:focus {
-            border-color: var(--success);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        ::-webkit-scrollbar-track {
+            background: #0F172A;
         }
 
-        /* Main Container */
-        .main-container {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 20px;
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #8B5CF6 0%, #06B6D4 100%);
+            border-radius: 5px;
         }
 
-        /* Cards */
-        .card {
-            background: var(--bg-card);
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #A78BFA 0%, #22D3EE 100%);
+        }
+
+        /* Glassmorphism эффект для карточек */
+        .glass {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .glass:hover {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+
+        /* Неоновое свечение текста */
+        .text-neon {
+            text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+        }
+
+        /* Анимация появления */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Hover эффект для кнопок */
+        .btn-glow {
+            position: relative;
             overflow: hidden;
         }
 
-        .card:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
+        .btn-glow::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
         }
 
-        .card-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-            border: none;
-            padding: 1.2rem 1.5rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .btn-glow:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
-        .card-body {
-            padding: 1.5rem;
+            {
+            % block extra_css %
         }
 
-        /* Buttons */
-        .btn {
-            border-radius: 8px;
-            padding: 10px 24px;
-            font-weight: 500;
-            transition: all 0.2s;
-            border: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-light);
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), var(--success-dark));
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: var(--success-dark);
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger), var(--danger-dark));
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: var(--danger-dark);
-            transform: scale(1.02);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, var(--warning), var(--warning-dark));
-            color: white;
-        }
-
-        /* Forms */
-        .form-control,
-        .form-select {
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 14px;
-            transition: all 0.2s;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--success);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 8px;
-        }
-
-        /* Tables */
-        .table {
-            background: var(--bg-card);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .table thead th {
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-            border: none;
-            padding: 14px;
-        }
-
-        .table tbody tr {
-            transition: background 0.2s;
-        }
-
-        .table tbody tr:hover {
-            background: var(--success-light);
-            cursor: pointer;
-        }
-
-        .table tbody td {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        /* Badges */
-        .badge {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-
-        .badge-success {
-            background: var(--success-light);
-            color: var(--success-dark);
-        }
-
-        .badge-danger {
-            background: var(--danger-light);
-            color: var(--danger-dark);
-        }
-
-        .badge-warning {
-            background: #fef3c7;
-            color: var(--warning-dark);
-        }
-
-        /* Alerts */
-        .alert {
-            border: none;
-            border-radius: 10px;
-            padding: 1rem 1.5rem;
-        }
-
-        /* Loading Spinner */
-        .spinner-border {
-            color: var(--success);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 2rem 0;
-            color: white;
-            margin-top: 3rem;
+            {
+            % endblock %
         }
     </style>
-
-    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-shield-halved"></i>
-                Ақпараттық операцияларға қарсы жүйе
-            </a>
+    <nav class="sticky top-0 z-50 backdrop-blur-xl bg-space-light/80 border-b border-neon-purple/20 shadow-lg">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-3 group">
+                    <div class="relative">
+                        <i
+                            class="fas fa-shield-halved text-4xl text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-cyan animate-pulse-slow"></i>
+                        <div
+                            class="absolute inset-0 blur-xl bg-gradient-to-r from-neon-purple to-neon-cyan opacity-30 group-hover:opacity-50 transition-opacity">
+                        </div>
+                    </div>
+                    <span
+                        class="font-display text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-purple via-neon-cyan to-neon-green group-hover:scale-105 transition-transform">
+                        {{ t.app_title if t else 'ИО Жүйесі' }}
+                    </span>
+                </a>
 
-            <div class="d-flex align-items-center gap-3">
-                <!-- Language Switcher -->
-                <select class="lang-switcher" id="langSwitch">
-                    <option value="kk">🇰🇿 Қазақша</option>
-                    <option value="ru">🇷🇺 Русский</option>
-                    <option value="en">🇬🇧 English</option>
-                </select>
-
-                <!-- User Info (if logged in) -->
-                {% if session.get('role') %}
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                        data-bs-toggle="dropdown">
-                        <i class="fas fa-user"></i> {{ session.get('role').title() }}
+                <!-- Right Side -->
+                <div class="flex items-center gap-4">
+                    <!-- Language Selector -->
+                    <button onclick="toggleLanguage()"
+                        class="glass px-4 py-2 rounded-xl hover:shadow-neon-purple transition-all duration-300 flex items-center gap-2 group">
+                        <i class="fas fa-language text-neon-cyan group-hover:text-neon-purple transition-colors"></i>
+                        <span class="font-semibold" id="currentLang">KK</span>
                     </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Шығу</a></li>
-                    </ul>
+
+                    <!-- User Menu -->
+                    {% if session.get('role') %}
+                    <div class="glass px-5 py-2 rounded-xl hover:shadow-neon-cyan transition-all duration-300 flex items-center gap-3 group cursor-pointer"
+                        onclick="window.location.href='/logout'">
+                        <div
+                            class="w-10 h-10 rounded-full bg-gradient-to-r from-neon-purple to-neon-cyan flex items-center justify-center shadow-neon-purple group-hover:scale-110 transition-transform">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span
+                                class="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-green">
+                                {{ session.get('role').title() }}
+                            </span>
+                            <span class="text-xs text-gray-400">Click to logout</span>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="main-container">
+    <main class="relative z-10 max-w-7xl mx-auto px-6 py-8 animate-fade-in">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
     <!-- Footer -->
-    <div class="footer">
-        <p>&copy; 2025 Ақпараттық операцияларға қарсы іс-қимыл жүйесі</p>
-    </div>
+    <footer class="relative z-10 mt-20 border-t border-neon-purple/20 bg-space-light/50 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-6 py-12">
+            <div class="text-center">
+                <div class="mb-6">
+                    <i
+                        class="fas fa-shield-halved text-6xl text-transparent bg-clip-text bg-gradient-to-r from-neon-purple via-neon-cyan to-neon-green animate-float"></i>
+                </div>
+                <h3
+                    class="text-xl font-display font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-cyan">
+                    Ақпараттық операцияларға қарсы іс-қимыл жүйесі
+                </h3>
+                <p class="text-gray-400 mb-6">
+                    Жасанды интеллект негізінде жасалған қауіпсіздік жүйесі
+                </p>
+                <div class="flex justify-center gap-6 text-sm text-gray-500">
+                    <a href="#" class="hover:text-neon-cyan transition-colors">API</a>
+                    <a href="#" class="hover:text-neon-cyan transition-colors">Docs</a>
+                    <a href="#" class="hover:text-neon-cyan transition-colors">Support</a>
+                </div>
+                <p class="mt-6 text-xs text-gray-600">
+                    © 2025 All rights reserved
+                </p>
+            </div>
+        </div>
+    </footer>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- DataTables -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Language Switcher -->
+    <!-- Global Scripts -->
     <script>
-        // Сохранение выбранного языка
-        document.getElementById('langSwitch').addEventListener('change', function () {
+        // Language Switcher
+        const languages = ['KK', 'RU', 'EN'];
+        let currentLangIndex = 0;
+
+        function toggleLanguage() {
+            currentLangIndex = (currentLangIndex + 1) % languages.length;
+            const lang = languages[currentLangIndex].toLowerCase();
+            document.getElementById('currentLang').textContent = languages[currentLangIndex];
+
             fetch('/set_language', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lang: this.value })
+                body: JSON.stringify({ lang: lang })
             }).then(() => location.reload());
+        }
+
+        // Utility Functions
+        window.Utils = {
+            showLoading(message = 'Жүктелуде...') {
+                Swal.fire({
+                    title: message,
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    background: '#1E293B',
+                    color: '#F1F5F9',
+                    didOpen: () => Swal.showLoading()
+                });
+            },
+
+            hideLoading() {
+                Swal.close();
+            },
+
+            showSuccess(message, title = 'Сәтті!') {
+                Swal.fire({
+                    icon: 'success',
+                    title: title,
+                    text: message,
+                    timer: 2000,
+                    showConfirmButton: false,
+                    background: '#1E293B',
+                    color: '#F1F5F9'
+                });
+            },
+
+            showError(message, title = 'Қате') {
+                Swal.fire({
+                    icon: 'error',
+                    title: title,
+                    text: message,
+                    background: '#1E293B',
+                    color: '#F1F5F9',
+                    confirmButtonColor: '#8B5CF6'
+                });
+            },
+
+            animateNumber(elementId, target, duration = 1000) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                const start = 0;
+                const increment = target / (duration / 16);
+                let current = start;
+
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        element.textContent = Math.round(target).toLocaleString();
+                        clearInterval(timer);
+                    } else {
+                        element.textContent = Math.round(current).toLocaleString();
+                    }
+                }, 16);
+            }
+        };
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
         });
 
-        // Восстановление выбранного языка
-        fetch('/get_language')
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('langSwitch').value = data.lang;
-            });
+        // Add parallax effect to background
+        let mouseX = 0, mouseY = 0;
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 20;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 20;
+
+            document.body.style.backgroundPosition = `${50 + mouseX}% ${50 + mouseY}%`;
+        });
     </script>
 
     {% block extra_js %}{% endblock %}

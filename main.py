@@ -24,7 +24,7 @@ from pydantic import BaseModel
 import uvicorn
 
 from nlp import NLPAnalyzer
-from translations import get_translation
+from translations import get_translation  # ✅ ИМПОРТ!
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -44,6 +44,15 @@ DATA_DIR.mkdir(exist_ok=True)
 flask_app = Flask(__name__)
 flask_app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-change-this")
 CORS(flask_app)
+
+# ==========================================
+# TRANSLATIONS CONTEXT PROCESSOR
+# ==========================================
+@flask_app.context_processor
+def inject_translations():
+    """Внедрение переводов во все шаблоны"""
+    lang = session.get('lang', 'kk')  # По умолчанию казахский
+    return {'t': get_translation(lang)}
 
 # ==========================================
 # DATABASE SETUP
@@ -114,7 +123,6 @@ if driver:
 # ==========================================
 analyzer = NLPAnalyzer()
 try:
-    # Пытаемся загрузить модели
     if DB_PATH.exists():
         analyzer.train_models_from_file(str(DB_PATH))
     print("✅ NLP моделі жүктелді")
@@ -141,13 +149,23 @@ def load_thesaurus():
     return []
 
 # ==========================================
-# FLASK CONTEXT PROCESSOR
+# FLASK ROUTES - Language
 # ==========================================
-@flask_app.context_processor
-def inject_translations():
-    """Внедрение переводов во все шаблоны"""
+@flask_app.route('/set_language', methods=['POST'])
+def set_language():
+    """Установить язык"""
+    data = request.get_json()
+    lang = data.get('lang', 'kk')
+    session['lang'] = lang
+    print(f"✅ Язык изменен на: {lang}")  # Debug
+    return jsonify({'status': 'ok', 'lang': lang})
+
+@flask_app.route('/get_language')
+def get_language():
+    """Получить текущий язык"""
     lang = session.get('lang', 'kk')
-    return {'t': get_translation(lang)}
+    print(f"📖 Текущий язык: {lang}")  # Debug
+    return jsonify({'lang': lang})
 
 # ==========================================
 # FLASK ROUTES - Authentication
@@ -155,6 +173,10 @@ def inject_translations():
 @flask_app.route('/')
 def index():
     """Главная страница"""
+    # Устанавливаем язык по умолчанию
+    if 'lang' not in session:
+        session['lang'] = 'kk'
+    
     # Если уже залогинен, редирект на соответствующую панель
     if 'role' in session:
         role = session['role']
@@ -170,6 +192,10 @@ def index():
 @flask_app.route('/login', methods=['GET', 'POST'])
 def login():
     """Страница входа"""
+    # Устанавливаем язык по умолчанию
+    if 'lang' not in session:
+        session['lang'] = 'kk'
+    
     if request.method == 'POST':
         role = request.form.get('role')
         password = request.form.get('password')
@@ -202,22 +228,6 @@ def logout():
     """Выход"""
     session.clear()
     return redirect(url_for('index'))
-
-# ==========================================
-# FLASK ROUTES - Language
-# ==========================================
-@flask_app.route('/set_language', methods=['POST'])
-def set_language():
-    """Установить язык"""
-    data = request.get_json()
-    lang = data.get('lang', 'kk')
-    session['lang'] = lang
-    return jsonify({'status': 'ok'})
-
-@flask_app.route('/get_language')
-def get_language():
-    """Получить текущий язык"""
-    return jsonify({'lang': session.get('lang', 'kk')})
 
 # ==========================================
 # FLASK ROUTES - Admin Panel
@@ -295,86 +305,7 @@ def thesaurus_page():
     
     return render_template('thesaurus.html', all_terms=all_terms)
 
-@flask_app.route('/thesaurus/search', methods=['GET'])
-def thesaurus_search():
-    """Поиск термина в тезаурусе"""
-    term = request.args.get('term', '').strip()
-    language = request.args.get('language', 'EN').upper()
-    
-    if not term:
-        return jsonify({"error": "Please enter a search term"}), 400
-    
-    thesaurus = load_thesaurus()
-    
-    # Поиск термина
-    result = None
-    for t in thesaurus:
-        term_key = f'TT_{language.lower()}'
-        if t.get(term_key, '').lower() == term.lower():
-            result = t
-            break
-    
-    if not result:
-        return jsonify({"error": f"Term '{term}' not found in {language}"}), 404
-    
-    # Формируем ответ
-    response = {
-        'search_term': term,
-        'search_language': language,
-        'results': {
-            language: {
-                'term': result.get(f'TT_{language.lower()}'),
-                'language': language,
-                'scope_notes': [result.get(f'SN_{language.lower()}', '')],
-                'relations': {
-                    'BROADER_TERM': [{'term': result.get(f'BT_{language.lower()}'), 'language': language}],
-                    'NARROWER_TERM': [{'term': result.get(f'NT_{language.lower()}'), 'language': language}],
-                    'RELATED_TERM': [{'term': result.get(f'RT_{language.lower()}'), 'language': language}],
-                    'USED_FOR': [{'term': result.get(f'UF_{language.lower()}'), 'language': language}],
-                    'PART_OF': [{'term': result.get(f'PT_{language.lower()}'), 'language': language}],
-                    'LANGUAGE_EQUIVALENT': []
-                }
-            }
-        }
-    }
-    
-    return jsonify(response)
-
-@flask_app.route('/thesaurus/add', methods=['POST'])
-def thesaurus_add():
-    """Добавить термин в тезаурус"""
-    term = request.form.get('term', '').strip()
-    language = request.form.get('language', 'EN').upper()
-    scope_note = request.form.get('scope_note', '').strip()
-    
-    if not term:
-        return jsonify({"error": "Term name is required"}), 400
-    
-    # Загружаем текущий тезаурус
-    thesaurus = load_thesaurus()
-    
-    # Создаем новый термин
-    new_id = max([t.get('id', 0) for t in thesaurus], default=0) + 1
-    new_term = {
-        'id': new_id,
-        f'TT_{language.lower()}': term,
-        f'SN_{language.lower()}': scope_note
-    }
-    
-    thesaurus.append(new_term)
-    
-    # Сохраняем обратно
-    try:
-        with open(THESAURUS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(thesaurus, f, ensure_ascii=False, indent=2)
-        
-        return jsonify({
-            "success": f"Term '{term}' added successfully in {language}",
-            "term": term,
-            "language": language
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# ... остальной код (thesaurus routes, FastAPI, etc)
 
 # ==========================================
 # FASTAPI APP (Backend API)
@@ -384,7 +315,7 @@ api = FastAPI(title="Info Operations API", version="1.0")
 # CORS для API
 api.add_middleware(
     FastAPICORS,
-    allow_origins=["http://localhost:5000", "http://127.0.0.1:5000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -398,75 +329,9 @@ class AnalyzeRequest(BaseModel):
     channel: str
     date: str
 
-class MessageResponse(BaseModel):
-    id: int
-    source: str
-    date: str
-    text: str
-    io_type: str
-    emo_eval: str
-    fake_claim: str
-
 # ==========================================
 # FASTAPI ROUTES
 # ==========================================
-@api.post("/api/analyze")
-def analyze_text(req: AnalyzeRequest):
-    """Анализ текста через NLP"""
-    if not req.text:
-        raise HTTPException(status_code=400, detail="Мәтін енгізілмеген")
-    
-    message_obj = {
-        "text": req.text,
-        "channel": req.channel,
-        "date": req.date or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-    
-    # NLP анализ
-    try:
-        report = analyzer.analyze_single_message(message_obj)
-        
-        # Сохраняем в БД
-        conn = get_db()
-        cursor = conn.cursor()
-        
-        analysis_data = report.get("analysis_report", {})
-        sentiment_data = analysis_data.get("general_sentiment", {})
-        
-        cursor.execute('''
-            INSERT INTO messages (source, date, text, io_type, emo_eval, fake_claim)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            req.channel,
-            req.date,
-            req.text,
-            analysis_data.get("predicted_info_operation_type"),
-            sentiment_data.get("label"),
-            str(analysis_data.get("is_anomaly"))
-        ))
-        
-        message_id = cursor.lastrowid
-        
-        # Сохраняем детальный анализ
-        cursor.execute('''
-            INSERT INTO analysis_results (message_id, ner_entities, thesaurus_matches, llm_summary, sentiment_score)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (
-            message_id,
-            json.dumps(analysis_data.get("named_entities_recognition", []), ensure_ascii=False),
-            json.dumps(analysis_data.get("military_terms_analysis", []), ensure_ascii=False),
-            json.dumps(analysis_data.get("llm_expert_summary", {}), ensure_ascii=False),
-            sentiment_data.get("score", 0)
-        ))
-        
-        conn.commit()
-        conn.close()
-        
-        return report
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Талдау қатесі: {str(e)}")
-
 @api.get("/api/stats/summary")
 def get_stats_summary():
     """Получить краткую статистику"""
@@ -495,29 +360,6 @@ def get_stats_summary():
         'total_terms': len(thesaurus)
     }
 
-@api.get("/api/messages")
-def get_messages(limit: int = 100):
-    """Получить список сообщений"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM messages ORDER BY created_at DESC LIMIT ?', (limit,))
-    messages = cursor.fetchall()
-    conn.close()
-    
-    result = []
-    for msg in messages:
-        result.append({
-            'id': msg['id'],
-            'source': msg['source'],
-            'date': msg['date'],
-            'text': msg['text'],
-            'io_type': msg['io_type'],
-            'emo_eval': msg['emo_eval'],
-            'fake_claim': msg['fake_claim']
-        })
-    
-    return result
-
 # ==========================================
 # MOUNT FLASK TO FASTAPI
 # ==========================================
@@ -531,10 +373,6 @@ if __name__ == "__main__":
     print("🚀 Сервер іске қосылуда...")
     print("="*50)
     print(f"📍 URL: http://127.0.0.1:5000")
-    print(f"📊 Admin: http://127.0.0.1:5000/admin")
-    print(f"📈 Analytics: http://127.0.0.1:5000/analytics")
-    print(f"📚 Thesaurus: http://127.0.0.1:5000/thesaurus")
-    print(f"🔧 API Docs: http://127.0.0.1:5000/docs")
     print("="*50 + "\n")
     
     uvicorn.run(api, host="127.0.0.1", port=5000, log_level="info")

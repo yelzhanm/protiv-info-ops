@@ -1,590 +1,254 @@
 {% extends "base.html" %}
 
-{% block title %}{{ t.analytics }} - {{ t.app_title }}{% endblock %}
+{% block title %}{{ t['analytics'] }} - {{ t['app_title'] }}{% endblock %}
 
 {% block extra_css %}
-<style>
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .stat-card {
-        background: linear-gradient(135deg, var(--primary), var(--primary-light));
-        color: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    }
-
-    .stat-card.success {
-        background: linear-gradient(135deg, var(--success), var(--success-dark));
-    }
-
-    .stat-card.danger {
-        background: linear-gradient(135deg, var(--danger), var(--danger-dark));
-    }
-
-    .stat-card.warning {
-        background: linear-gradient(135deg, var(--warning), var(--warning-dark));
-    }
-
-    .stat-icon {
-        font-size: 2.5rem;
-        opacity: 0.8;
-        margin-bottom: 1rem;
-    }
-
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 0.3rem;
-    }
-
-    .stat-label {
-        font-size: 0.9rem;
-        opacity: 0.9;
-    }
-
-    .stat-change {
-        font-size: 0.85rem;
-        margin-top: 0.5rem;
-        opacity: 0.8;
-    }
-
-    .stat-change i {
-        margin-right: 4px;
-    }
-
-    /* Filter Section */
-    .filters-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .filter-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        align-items: end;
-    }
-
-    /* Charts Grid */
-    .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .chart-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .chart-card.full-width {
-        grid-column: 1 / -1;
-    }
-
-    .chart-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid var(--border);
-    }
-
-    .chart-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--primary);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .chart-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .chart-btn {
-        padding: 4px 12px;
-        font-size: 0.85rem;
-        border-radius: 6px;
-        border: none;
-        background: var(--bg-main);
-        color: var(--text-main);
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .chart-btn:hover {
-        background: var(--success);
-        color: white;
-    }
-
-    .chart-container {
-        position: relative;
-        height: 300px;
-    }
-
-    .chart-container.tall {
-        height: 400px;
-    }
-
-    /* WordCloud Section */
-    .wordcloud-container {
-        background: white;
-        border-radius: 8px;
-        padding: 2rem;
-        text-align: center;
-        min-height: 300px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .wordcloud-placeholder {
-        color: var(--text-muted);
-    }
-
-    .wordcloud-placeholder i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.3;
-    }
-
-    /* Top Items Lists */
-    .top-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .top-list-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.8rem;
-        margin-bottom: 0.5rem;
-        background: var(--bg-main);
-        border-radius: 8px;
-        transition: all 0.2s;
-    }
-
-    .top-list-item:hover {
-        background: var(--success-light);
-        transform: translateX(5px);
-    }
-
-    .top-list-rank {
-        width: 30px;
-        height: 30px;
-        background: var(--primary);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.9rem;
-    }
-
-    .top-list-name {
-        flex: 1;
-        margin: 0 1rem;
-        font-weight: 500;
-    }
-
-    .top-list-value {
-        font-weight: 700;
-        color: var(--success);
-    }
-
-    .top-list-bar {
-        height: 6px;
-        background: var(--success-light);
-        border-radius: 3px;
-        margin-top: 0.5rem;
-        overflow: hidden;
-    }
-
-    .top-list-bar-fill {
-        height: 100%;
-        background: var(--success);
-        transition: width 0.5s ease;
-    }
-
-    /* Loading State */
-    .loading-state {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 300px;
-        flex-direction: column;
-        color: var(--text-muted);
-    }
-
-    .loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid var(--border);
-        border-top-color: var(--success);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        color: var(--text-muted);
-    }
-
-    .empty-state i {
-        font-size: 4rem;
-        opacity: 0.2;
-        margin-bottom: 1rem;
-    }
-
-    /* Export Button */
-    .export-section {
-        background: var(--bg-card);
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        margin-top: 2rem;
-    }
-
-    .export-btn {
-        padding: 12px 32px;
-        font-size: 1rem;
-        font-weight: 600;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .charts-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-        }
-    }
-</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="mb-4">
-        <h1 class="h3 mb-1">
-            <i class="fas fa-chart-line"></i>
-            {{ t.analytics }}
-        </h1>
-        <p class="text-muted">Деректерді визуализациялау және статистикалық талдау</p>
-    </div>
+<!-- Header -->
+<div class="mb-8">
+    <h1
+        class="text-4xl font-display font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-green">
+        <i class="fas fa-chart-line mr-3"></i>
+        {{ t['analytics'] }}
+    </h1>
+    <p class="text-gray-400">Деректерді визуализациялау және статистикалық талдау</p>
+</div>
 
-    <!-- Stats Cards -->
-    <div class="stats-grid" id="statsCards">
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-envelope"></i>
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <!-- Total Messages -->
+    <div class="glass p-6 rounded-2xl hover:shadow-neon-purple transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
+            <div
+                class="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-purple to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i class="fas fa-envelope text-xl text-white"></i>
             </div>
-            <div class="stat-value" id="totalMessages">0</div>
-            <div class="stat-label">Барлық хабарламалар</div>
-            <div class="stat-change">
-                <i class="fas fa-arrow-up"></i>
-                +12% бұл айда
-            </div>
+            <span class="text-xs text-gray-400">БАРЛЫҚ</span>
         </div>
-
-        <div class="stat-card success">
-            <div class="stat-icon">
-                <i class="fas fa-shield-halved"></i>
-            </div>
-            <div class="stat-value" id="safeMessages">0</div>
-            <div class="stat-label">Қауіпсіз хабарламалар</div>
-            <div class="stat-change">
-                <i class="fas fa-check"></i>
-                Жалпының 65%
-            </div>
-        </div>
-
-        <div class="stat-card danger">
-            <div class="stat-icon">
-                <i class="fas fa-triangle-exclamation"></i>
-            </div>
-            <div class="stat-value" id="threats">0</div>
-            <div class="stat-label">Қауіпті хабарламалар</div>
-            <div class="stat-change">
-                <i class="fas fa-arrow-down"></i>
-                -8% өткен аптаға қарағанда
-            </div>
-        </div>
-
-        <div class="stat-card warning">
-            <div class="stat-icon">
-                <i class="fas fa-book"></i>
-            </div>
-            <div class="stat-value" id="termsFound">0</div>
-            <div class="stat-label">Табылған терминдер</div>
-            <div class="stat-change">
-                <i class="fas fa-hashtag"></i>
-                Орташа 3.2 термин/хабарлама
-            </div>
+        <div class="text-3xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-purple-400"
+            id="totalMessages">0</div>
+        <div class="text-sm text-gray-400">Хабарламалар</div>
+        <div class="mt-2 text-xs text-neon-green flex items-center gap-1">
+            <i class="fas fa-arrow-up"></i>
+            <span>+12% бұл айда</span>
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="filters-card">
-        <h5 class="mb-3">
-            <i class="fas fa-filter"></i>
-            Сүзгілер
-        </h5>
-        <div class="filter-row">
-            <div>
-                <label class="form-label">Дереккөз</label>
-                <select class="form-select" id="sourceFilter">
-                    <option value="">Барлық дереккөздер</option>
-                </select>
+    <!-- Safe Messages -->
+    <div class="glass p-6 rounded-2xl hover:shadow-neon-green transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
+            <div
+                class="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-green to-green-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i class="fas fa-shield-halved text-xl text-white"></i>
             </div>
-            <div>
-                <label class="form-label">Басталу күні</label>
-                <input type="date" class="form-control" id="dateFrom">
-            </div>
-            <div>
-                <label class="form-label">Аяқталу күні</label>
-                <input type="date" class="form-control" id="dateTo">
-            </div>
-            <div>
-                <button class="btn btn-success w-100" id="applyFilters">
-                    <i class="fas fa-filter"></i>
-                    Қолдану
-                </button>
-            </div>
+            <span class="text-xs text-gray-400">ҚАУІПСІЗ</span>
+        </div>
+        <div class="text-3xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-green-400"
+            id="safeMessages">0</div>
+        <div class="text-sm text-gray-400">Қауіпсіз</div>
+        <div class="mt-2 text-xs text-gray-400">
+            <span>Жалпының 65%</span>
         </div>
     </div>
 
-    <!-- Charts Grid -->
-    <div class="charts-grid">
-        <!-- Time Series Chart -->
-        <div class="chart-card full-width">
-            <div class="chart-header">
-                <h5 class="chart-title">
-                    <i class="fas fa-chart-area"></i>
-                    Уақыт бойынша динамика
-                </h5>
-                <div class="chart-actions">
-                    <button class="chart-btn" onclick="refreshChart('timeSeries')">
-                        <i class="fas fa-sync"></i>
-                    </button>
-                    <button class="chart-btn" onclick="downloadChart('timeSeries')">
-                        <i class="fas fa-download"></i>
-                    </button>
-                </div>
+    <!-- Threats -->
+    <div class="glass p-6 rounded-2xl hover:shadow-neon-red transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
+            <div
+                class="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-red to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i class="fas fa-triangle-exclamation text-xl text-white"></i>
             </div>
-            <div class="chart-container tall">
-                <canvas id="timeSeriesChart"></canvas>
-            </div>
+            <span class="text-xs text-gray-400">ҚАУІПТІ</span>
         </div>
-
-        <!-- IO Types Distribution -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h5 class="chart-title">
-                    <i class="fas fa-chart-pie"></i>
-                    АО түрлері бойынша үлестіру
-                </h5>
-                <div class="chart-actions">
-                    <button class="chart-btn" onclick="refreshChart('ioTypes')">
-                        <i class="fas fa-sync"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="ioTypesChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Sentiment Distribution -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h5 class="chart-title">
-                    <i class="fas fa-chart-pie"></i>
-                    Эмоционалдық тон
-                </h5>
-                <div class="chart-actions">
-                    <button class="chart-btn" onclick="refreshChart('sentiment')">
-                        <i class="fas fa-sync"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="sentimentChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Top Sources -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h5 class="chart-title">
-                    <i class="fas fa-ranking-star"></i>
-                    Топ дереккөздер
-                </h5>
-            </div>
-            <ul class="top-list" id="topSourcesList">
-                <!-- Populated by JS -->
-            </ul>
-        </div>
-
-        <!-- Top Terms -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h5 class="chart-title">
-                    <i class="fas fa-hashtag"></i>
-                    Жиі кездесетін терминдер
-                </h5>
-            </div>
-            <ul class="top-list" id="topTermsList">
-                <!-- Populated by JS -->
-            </ul>
-        </div>
-
-        <!-- WordCloud -->
-        <div class="chart-card full-width">
-            <div class="chart-header">
-                <h5 class="chart-title">
-                    <i class="fas fa-cloud"></i>
-                    Сөздер бұлты
-                </h5>
-                <div class="chart-actions">
-                    <button class="chart-btn" onclick="generateWordCloud()">
-                        <i class="fas fa-sync"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="wordcloud-container" id="wordcloudContainer">
-                <div class="wordcloud-placeholder">
-                    <i class="fas fa-cloud"></i>
-                    <p>WordCloud генерациялануда...</p>
-                </div>
-            </div>
+        <div class="text-3xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-neon-red to-red-400"
+            id="threats">0</div>
+        <div class="text-sm text-gray-400">Қауіпті</div>
+        <div class="mt-2 text-xs text-neon-green flex items-center gap-1">
+            <i class="fas fa-arrow-down"></i>
+            <span>-8% өткен аптаға қарағанда</span>
         </div>
     </div>
 
-    <!-- Export Section -->
-    <div class="export-section">
-        <h5 class="mb-3">
-            <i class="fas fa-file-export"></i>
-            Деректерді экспорттау
-        </h5>
-        <p class="text-muted mb-3">Барлық деректерді немесе сүзілген нәтижелерді CSV форматында жүктеңіз</p>
-        <button class="btn btn-primary export-btn" onclick="exportToCSV()">
-            <i class="fas fa-download"></i>
-            CSV-ге экспорттау
-        </button>
+    <!-- Terms Found -->
+    <div class="glass p-6 rounded-2xl hover:shadow-neon-cyan transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
+            <div
+                class="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-cyan to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i class="fas fa-book text-xl text-white"></i>
+            </div>
+            <span class="text-xs text-gray-400">ТЕРМИНДЕР</span>
+        </div>
+        <div class="text-3xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-blue-400"
+            id="termsFound">0</div>
+        <div class="text-sm text-gray-400">Табылған</div>
+        <div class="mt-2 text-xs text-gray-400">
+            <span>Орташа 3.2 термин/хабарлама</span>
+        </div>
     </div>
+</div>
+
+<!-- Filters -->
+<div class="glass p-6 rounded-2xl mb-8">
+    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-filter text-neon-cyan"></i>
+        Сүзгілер
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+            <label class="block text-sm font-bold mb-2 text-gray-300">Дереккөз</label>
+            <select id="sourceFilter"
+                class="w-full px-4 py-2 bg-space-light/50 border-2 border-neon-purple/30 rounded-xl text-white focus:border-neon-purple focus:outline-none transition-all">
+                <option value="">Барлық дереккөздер</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-bold mb-2 text-gray-300">Басталу күні</label>
+            <input type="date" id="dateFrom"
+                class="w-full px-4 py-2 bg-space-light/50 border-2 border-neon-purple/30 rounded-xl text-white focus:border-neon-purple focus:outline-none transition-all">
+        </div>
+        <div>
+            <label class="block text-sm font-bold mb-2 text-gray-300">Аяқталу күні</label>
+            <input type="date" id="dateTo"
+                class="w-full px-4 py-2 bg-space-light/50 border-2 border-neon-purple/30 rounded-xl text-white focus:border-neon-purple focus:outline-none transition-all">
+        </div>
+        <div class="flex items-end">
+            <button id="applyFilters"
+                class="w-full btn-glow py-2 rounded-xl font-bold bg-gradient-to-r from-neon-cyan to-neon-green hover:shadow-neon-cyan transition-all text-white">
+                <i class="fas fa-filter mr-2"></i>
+                Қолдану
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Time Series Chart -->
+    <div class="glass p-6 rounded-2xl lg:col-span-2">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-bold flex items-center gap-2">
+                <i class="fas fa-chart-area text-neon-purple"></i>
+                Уақыт бойынша динамика
+            </h2>
+            <button onclick="refreshChart('timeSeries')"
+                class="px-3 py-1 rounded-lg bg-neon-purple/20 hover:bg-neon-purple/30 text-neon-purple transition-colors text-sm">
+                <i class="fas fa-sync"></i>
+            </button>
+        </div>
+        <div class="h-80">
+            <canvas id="timeSeriesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- IO Types Distribution -->
+    <div class="glass p-6 rounded-2xl">
+        <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
+            <i class="fas fa-chart-pie text-neon-cyan"></i>
+            АО түрлері
+        </h2>
+        <div class="h-64">
+            <canvas id="ioTypesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Sentiment Distribution -->
+    <div class="glass p-6 rounded-2xl">
+        <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
+            <i class="fas fa-chart-pie text-neon-green"></i>
+            Эмоционалдық тон
+        </h2>
+        <div class="h-64">
+            <canvas id="sentimentChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Top Lists -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <!-- Top Sources -->
+    <div class="glass p-6 rounded-2xl">
+        <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <i class="fas fa-ranking-star text-neon-purple"></i>
+            Топ дереккөздер
+        </h2>
+        <div id="topSourcesList" class="space-y-2"></div>
+    </div>
+
+    <!-- Top Terms -->
+    <div class="glass p-6 rounded-2xl">
+        <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <i class="fas fa-hashtag text-neon-cyan"></i>
+            Жиі кездесетін терминдер
+        </h2>
+        <div id="topTermsList" class="space-y-2"></div>
+    </div>
+</div>
+
+<!-- Export Section -->
+<div class="glass p-8 rounded-2xl text-center">
+    <h2 class="text-2xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-cyan">
+        <i class="fas fa-file-export mr-2"></i>
+        Деректерді экспорттау
+    </h2>
+    <p class="text-gray-400 mb-6">Барлық деректерді немесе сүзілген нәтижелерді CSV форматында жүктеңіз</p>
+    <button onclick="exportToCSV()"
+        class="btn-glow px-8 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-neon-purple to-neon-cyan hover:shadow-neon-purple transition-all text-white">
+        <i class="fas fa-download mr-2"></i>
+        CSV-ге экспорттау
+    </button>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 <script>
     let charts = {};
     let analyticsData = null;
 
     $(document).ready(function () {
-        // Load initial data
         loadAnalyticsData();
-
-        // Apply filters button
-        $('#applyFilters').on('click', function () {
-            loadAnalyticsData();
-        });
+        $('#applyFilters').on('click', loadAnalyticsData);
     });
 
-    // Load analytics data from API
     function loadAnalyticsData() {
-        // Get filter values
         const source = $('#sourceFilter').val();
         const dateFrom = $('#dateFrom').val();
         const dateTo = $('#dateTo').val();
 
-        // Build query params
         let params = new URLSearchParams();
         if (source) params.append('source', source);
         if (dateFrom) params.append('date_from', dateFrom);
         if (dateTo) params.append('date_to', dateTo);
 
-        // Show loading state
-        showLoading();
-
-        // Fetch messages
         $.ajax({
             url: `/api/messages?${params.toString()}`,
             method: 'GET',
             success: function (messages) {
                 analyticsData = processData(messages);
                 updateDashboard(analyticsData);
-                hideLoading();
             },
             error: function () {
-                // Use demo data if API fails
                 analyticsData = generateDemoData();
                 updateDashboard(analyticsData);
-                hideLoading();
             }
         });
     }
 
-    // Process raw data
     function processData(messages) {
-        // Time series data
         const timeSeriesData = {};
         const ioTypesData = {};
         const sentimentData = { positive: 0, negative: 0, neutral: 0 };
         const sourcesData = {};
-        const termsData = {};
-        let threats = 0;
-        let safe = 0;
+        let threats = 0, safe = 0;
 
         messages.forEach(msg => {
-            // Time series
             const date = msg.date ? msg.date.split(' ')[0] : 'Unknown';
             timeSeriesData[date] = (timeSeriesData[date] || 0) + 1;
 
-            // IO Types
-            if (msg.io_type) {
-                ioTypesData[msg.io_type] = (ioTypesData[msg.io_type] || 0) + 1;
-            }
+            if (msg.io_type) ioTypesData[msg.io_type] = (ioTypesData[msg.io_type] || 0) + 1;
 
-            // Sentiment
             if (msg.emo_eval) {
                 const emo = msg.emo_eval.toLowerCase();
                 if (emo.includes('positive')) sentimentData.positive++;
@@ -592,40 +256,27 @@
                 else sentimentData.neutral++;
             }
 
-            // Sources
-            if (msg.source) {
-                sourcesData[msg.source] = (sourcesData[msg.source] || 0) + 1;
-            }
-
-            // Threats
-            if (msg.fake_claim === 'True') threats++;
-            else safe++;
+            if (msg.source) sourcesData[msg.source] = (sourcesData[msg.source] || 0) + 1;
+            if (msg.fake_claim === 'True') threats++; else safe++;
         });
 
-        // Sort and limit
-        const topSources = Object.entries(sourcesData)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10);
+        const topSources = Object.entries(sourcesData).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
         return {
             total: messages.length,
-            threats: threats,
-            safe: safe,
+            threats, safe,
             timeSeries: timeSeriesData,
             ioTypes: ioTypesData,
             sentiment: sentimentData,
-            topSources: topSources,
-            termsFound: Math.floor(messages.length * 3.2) // Mock
+            topSources,
+            termsFound: Math.floor(messages.length * 3.2)
         };
     }
 
-    // Generate demo data
     function generateDemoData() {
         const dates = generateDateRange(30);
         const timeSeriesData = {};
-        dates.forEach(date => {
-            timeSeriesData[date] = Math.floor(Math.random() * 50) + 10;
-        });
+        dates.forEach(date => timeSeriesData[date] = Math.floor(Math.random() * 50) + 10);
 
         return {
             total: 1247,
@@ -639,71 +290,33 @@
                 'INTIMIDATION': 280,
                 'HATE_INCITEMENT': 197
             },
-            sentiment: {
-                positive: 420,
-                negative: 627,
-                neutral: 200
-            },
+            sentiment: { positive: 420, negative: 627, neutral: 200 },
             topSources: [
                 ['Telegram Channel A', 234],
                 ['Twitter Account B', 189],
                 ['News Portal C', 156],
                 ['Facebook Page D', 143],
-                ['VK Group E', 128],
-                ['YouTube Channel F', 98],
-                ['Instagram G', 87],
-                ['TikTok H', 76],
-                ['Website I', 65],
-                ['Forum J', 54]
+                ['VK Group E', 128]
             ]
         };
     }
 
-    // Update dashboard
     function updateDashboard(data) {
-        // Update stats cards
-        animateNumber('totalMessages', data.total);
-        animateNumber('safeMessages', data.safe);
-        animateNumber('threats', data.threats);
-        animateNumber('termsFound', data.termsFound);
+        Utils.animateNumber('totalMessages', data.total);
+        Utils.animateNumber('safeMessages', data.safe);
+        Utils.animateNumber('threats', data.threats);
+        Utils.animateNumber('termsFound', data.termsFound);
 
-        // Populate source filter
-        populateSourceFilter(data.topSources);
-
-        // Create charts
         createTimeSeriesChart(data.timeSeries);
         createIOTypesChart(data.ioTypes);
         createSentimentChart(data.sentiment);
-
-        // Create lists
         createTopSourcesList(data.topSources);
         createTopTermsList();
     }
 
-    // Animate number
-    function animateNumber(elementId, target) {
-        const element = document.getElementById(elementId);
-        let current = 0;
-        const increment = target / 50;
-        const timer = setInterval(() => {
-            current += increment;
-            if (current >= target) {
-                element.textContent = Math.round(target).toLocaleString();
-                clearInterval(timer);
-            } else {
-                element.textContent = Math.round(current).toLocaleString();
-            }
-        }, 20);
-    }
-
-    // Create Time Series Chart
     function createTimeSeriesChart(data) {
         const ctx = document.getElementById('timeSeriesChart');
-
-        // Destroy existing chart
-        if (charts.timeSeries) {
-            charts.timeSeries.destroy();
-        }
+        if (charts.timeSeries) charts.timeSeries.destroy();
 
         const labels = Object.keys(data).sort();
         const values = labels.map(label => data[label]);
@@ -711,12 +324,12 @@
         charts.timeSeries = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels,
                 datasets: [{
                     label: 'Хабарламалар саны',
                     data: values,
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderColor: '#22D3EE',
+                    backgroundColor: 'rgba(34, 211, 238, 0.1)',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4
@@ -725,35 +338,18 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
+                    y: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94A3B8' } },
+                    x: { grid: { display: false }, ticks: { color: '#94A3B8' } }
                 }
             }
         });
     }
 
-    // Create IO Types Chart
     function createIOTypesChart(data) {
         const ctx = document.getElementById('ioTypesChart');
-
-        if (charts.ioTypes) {
-            charts.ioTypes.destroy();
-        }
+        if (charts.ioTypes) charts.ioTypes.destroy();
 
         charts.ioTypes = new Chart(ctx, {
             type: 'doughnut',
@@ -761,36 +357,21 @@
                 labels: Object.keys(data),
                 datasets: [{
                     data: Object.values(data),
-                    backgroundColor: [
-                        '#10b981',
-                        '#ef4444',
-                        '#f59e0b',
-                        '#8b5cf6',
-                        '#3b82f6'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
+                    backgroundColor: ['#8B5CF6', '#EF4444', '#F59E0B', '#EC4899'],
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
+                plugins: { legend: { position: 'bottom', labels: { color: '#94A3B8' } } }
             }
         });
     }
 
-    // Create Sentiment Chart
     function createSentimentChart(data) {
         const ctx = document.getElementById('sentimentChart');
-
-        if (charts.sentiment) {
-            charts.sentiment.destroy();
-        }
+        if (charts.sentiment) charts.sentiment.destroy();
 
         charts.sentiment = new Chart(ctx, {
             type: 'doughnut',
@@ -798,95 +379,69 @@
                 labels: ['Позитивті', 'Негативті', 'Нейтралды'],
                 datasets: [{
                     data: [data.positive, data.negative, data.neutral],
-                    backgroundColor: [
-                        '#10b981',
-                        '#ef4444',
-                        '#94a3b8'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
+                    backgroundColor: ['#10B981', '#EF4444', '#94A3B8'],
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
+                plugins: { legend: { position: 'bottom', labels: { color: '#94A3B8' } } }
             }
         });
     }
 
-    // Create Top Sources List
     function createTopSourcesList(sources) {
         const list = $('#topSourcesList');
         list.empty();
-
         const maxValue = sources[0] ? sources[0][1] : 1;
 
         sources.forEach((item, index) => {
             const percentage = (item[1] / maxValue) * 100;
             list.append(`
-                <li class="top-list-item">
-                    <span class="top-list-rank">${index + 1}</span>
-                    <span class="top-list-name">${item[0]}</span>
-                    <span class="top-list-value">${item[1]}</span>
-                    <div class="top-list-bar">
-                        <div class="top-list-bar-fill" style="width: ${percentage}%"></div>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-space-light/30 hover:bg-neon-purple/10 transition-colors group cursor-pointer">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple to-purple-600 flex items-center justify-center font-bold text-white text-sm">${index + 1}</div>
+                    <div class="flex-1">
+                        <div class="text-sm font-bold mb-1">${item[0]}</div>
+                        <div class="h-1 bg-space-light rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-neon-purple to-neon-cyan transition-all duration-500" style="width: ${percentage}%"></div>
+                        </div>
                     </div>
-                </li>
+                    <div class="text-sm font-bold text-neon-purple">${item[1]}</div>
+                </div>
             `);
         });
     }
 
-    // Create Top Terms List
     function createTopTermsList() {
         const list = $('#topTermsList');
         list.empty();
-
         const demoTerms = [
             ['Әскери операция', 156],
             ['Тактикалық операция', 134],
             ['Барлау', 112],
             ['Қарулы күштер', 98],
-            ['Стратегия', 87],
-            ['Дрон', 76],
-            ['Танк', 65],
-            ['Әуе күштері', 54],
-            ['Кибершабуыл', 43],
-            ['Артиллерия', 32]
+            ['Стратегия', 87]
         ];
-
         const maxValue = demoTerms[0][1];
 
         demoTerms.forEach((item, index) => {
             const percentage = (item[1] / maxValue) * 100;
             list.append(`
-                <li class="top-list-item">
-                    <span class="top-list-rank">${index + 1}</span>
-                    <span class="top-list-name">${item[0]}</span>
-                    <span class="top-list-value">${item[1]}</span>
-                    <div class="top-list-bar">
-                        <div class="top-list-bar-fill" style="width: ${percentage}%"></div>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-space-light/30 hover:bg-neon-cyan/10 transition-colors group cursor-pointer">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-cyan to-blue-600 flex items-center justify-center font-bold text-white text-sm">${index + 1}</div>
+                    <div class="flex-1">
+                        <div class="text-sm font-bold mb-1">${item[0]}</div>
+                        <div class="h-1 bg-space-light rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-neon-cyan to-neon-green transition-all duration-500" style="width: ${percentage}%"></div>
+                        </div>
                     </div>
-                </li>
+                    <div class="text-sm font-bold text-neon-cyan">${item[1]}</div>
+                </div>
             `);
         });
     }
 
-    // Populate source filter
-    function populateSourceFilter(sources) {
-        const select = $('#sourceFilter');
-        select.find('option:not(:first)').remove();
-
-        sources.forEach(source => {
-            select.append(`<option value="${source[0]}">${source[0]}</option>`);
-        });
-    }
-
-    // Generate date range
     function generateDateRange(days) {
         const dates = [];
         const today = new Date();
@@ -898,83 +453,17 @@
         return dates;
     }
 
-    // Generate WordCloud (mock)
-    function generateWordCloud() {
-        const container = $('#wordcloudContainer');
-        container.html(`
-            <div class="loading-state">
-                <div class="loading-spinner"></div>
-                <p>WordCloud генерациялануда...</p>
-            </div>
-        `);
-
-        setTimeout(() => {
-            container.html(`
-                <div class="empty-state">
-                    <i class="fas fa-cloud"></i>
-                    <h5>WordCloud дайын емес</h5>
-                    <p>Python бэкенді қажет (matplotlib, wordcloud)</p>
-                    <small class="text-muted">API endpoint: /api/wordcloud</small>
-                </div>
-            `);
-        }, 1500);
-    }
-
-    // Refresh chart
     function refreshChart(chartName) {
         loadAnalyticsData();
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Жаңартылды',
-            text: 'Деректер жаңартылды',
-            timer: 1500,
-            showConfirmButton: false
-        });
+        Utils.showSuccess('Деректер жаңартылды');
     }
 
-    // Download chart
-    function downloadChart(chartName) {
-        const chart = charts[chartName];
-        if (chart) {
-            const url = chart.toBase64Image();
-            const link = document.createElement('a');
-            link.download = `${chartName}_${Date.now()}.png`;
-            link.href = url;
-            link.click();
-        }
-    }
-
-    // Export to CSV
     function exportToCSV() {
-        Swal.fire({
-            icon: 'info',
-            title: 'CSV экспорты',
-            text: 'Файл дайындалуда...',
-            timer: 1500,
-            showConfirmButton: false
-        });
-
-        // Mock download
+        Utils.showLoading('CSV дайындалуда...');
         setTimeout(() => {
-            const csvContent = "data:text/csv;charset=utf-8,Source,Date,Text,IO_Type,Emotion,Fake\n";
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `analytics_${Date.now()}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }, 1000);
-    }
-
-    // Loading states
-    function showLoading() {
-        $('.stat-value').html('<div class="loading-spinner" style="width: 30px; height: 30px;"></div>');
-    }
-
-    function hideLoading() {
-        // Numbers will be updated by animateNumber
+            Utils.hideLoading();
+            Utils.showSuccess('CSV файл жүктелді');
+        }, 1500);
     }
 </script>
 {% endblock %}
