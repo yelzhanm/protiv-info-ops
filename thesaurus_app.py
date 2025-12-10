@@ -1,14 +1,23 @@
 from flask import Flask, render_template, jsonify, request
 from neo4j import GraphDatabase
+from dotenv import load_dotenv
+import os
 
-# Flask қолданбасы
+
+# Загружаем переменные окружения
+load_dotenv()
+
 app = Flask(__name__)
 
-# 🔗 Neo4j-пен байланыс
-# ⚠ Өз логин/пароліңді қажет болса өзгерт
-driver = GraphDatabase.driver("bolt://172.16.0.2:7687", auth=("neo4j", "iJQSUNd56KfY78w"))
+# Получаем данные из .env
+uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+user = os.getenv("NEO4J_USER", "neo4j")
+password = os.getenv("NEO4J_PASSWORD")
 
-# -----------------------
+if not password:
+    print("⚠️ Внимание: Пароль для Neo4j не найден в .env!")
+
+driver = GraphDatabase.driver(uri, auth=(user, password))
 # 🔹 Басты бет (index.html)
 # -----------------------
 @app.route('/')

@@ -10,6 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from transformers import pipeline, logging
 from datetime import datetime
 from pathlib import Path
+import joblib
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -31,6 +32,7 @@ class NLPAnalyzer:
         self.anomaly_model = None
         # Hugging Face модельдерін және embedder-ді жүктеу
         self._load_hf_models()
+        self.model_path = BASE_DIR / "data" / "models.pkl"
 
     def _load_thesaurus(self):
         try:
@@ -56,6 +58,15 @@ class NLPAnalyzer:
         print("✅ Hugging Face модельдері жүктелді.")
 
     def train_models_from_file(self, data_file_path):
+        if self.model_path.exists():
+            print("📥 Загружаю сохраненные модели...")
+            models = joblib.load(self.model_path)
+            self.vectorizer = models['vectorizer']
+            self.io_classifier = models['classifier']
+            self.anomaly_model = models['anomaly']
+            print("✅ Модели загружены!")
+            return
+        
         labeled_data = self._parse_label_studio_data(data_file_path)
         if not labeled_data:
             print("⚠ ЕСКЕРТУ: Деректер табылмады, модельдер үйретілмеді.")
@@ -81,6 +92,14 @@ class NLPAnalyzer:
         self.anomaly_model = IsolationForest(contamination=0.1, random_state=42)
         self.anomaly_model.fit(self.embedder.encode(baseline_texts))
         print("✅ Аномалия моделі дайын.")
+
+        if self.io_classifier:
+            print("💾 Сохраняю модели...")
+            joblib.dump({
+                'vectorizer': self.vectorizer,
+                'classifier': self.io_classifier,
+                'anomaly': self.anomaly_model
+            }, self.model_path)
 
     def analyze_single_message(self, message_object):
         text = message_object.get("text", "")

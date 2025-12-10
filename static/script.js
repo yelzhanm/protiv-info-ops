@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nerTable = document.getElementById("ner-table");
     const thesaurusTable = document.getElementById("thesaurus-table");
     const llmSummary = document.getElementById("llm-summary");
+    const messageTableBody = document.querySelector("#messageTable tbody");
 
     const errorMessage = document.getElementById("error-message");
 
@@ -92,6 +93,46 @@ document.addEventListener("DOMContentLoaded", () => {
             <p><b>Қорытынды:</b> ${a.llm_expert_summary.summary}</p>
             <p><b>Қауіп деңгейі:</b> ${a.llm_expert_summary.threat_level}</p>
         `;
+    }
+
+    function addRecordToFeed(data) {
+        const row = document.createElement("tr");
+        const a = data.analysis_report;
+        
+        // Данные для клика по строке (чтобы работало "Message Analysis" при клике на новую строку)
+        row.dataset.source = data.source_info.channel;
+        row.dataset.date = data.source_info.date;
+        row.dataset.text = data.original_text;
+        row.dataset.io = a.predicted_info_operation_type;
+        row.dataset.emo = a.general_sentiment.label;
+        row.dataset.fake = a.is_anomaly ? "True" : "False";
+
+        // Заполняем ячейки
+        row.innerHTML = `
+            <td>${data.source_info.channel}</td>
+            <td>${data.source_info.date}</td>
+            <td>${data.original_text.substring(0, 50) + "..."}</td>
+            <td>${a.predicted_info_operation_type}</td>
+            <td>${a.general_sentiment.label}</td>
+            <td>${a.is_anomaly ? "True" : "False"}</td>
+            <td>
+                <button disabled title="Обновите страницу для удаления">♻ Жаңа</button>
+            </td>
+        `;
+
+        // Добавляем обработчик клика на новую строку
+        row.addEventListener("click", () => {
+            document.getElementById("aSource").textContent = row.dataset.source;
+            document.getElementById("aDate").textContent = row.dataset.date;
+            document.getElementById("aIO").textContent = row.dataset.io;
+            document.getElementById("aFake").textContent = row.dataset.fake;
+            document.getElementById("aEmo").textContent = row.dataset.emo;
+            document.getElementById("aText").textContent = row.dataset.text;
+            document.querySelector(".analysis").scrollIntoView({ behavior: "smooth" });
+        });
+
+        // Вставляем строку в начало таблицы
+        messageTableBody.insertBefore(row, messageTableBody.firstChild);
     }
 
     function showError(msg) {

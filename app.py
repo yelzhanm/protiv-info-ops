@@ -39,11 +39,28 @@ except Exception as e:
 
 
 load_dotenv()
-driver = GraphDatabase.driver(
-    os.getenv("NEO4J_URI"),
-    auth=(os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASSWORD"))
-)
-atexit.register(lambda: driver.close())
+
+driver = None # По умолчанию драйвера нет
+
+try:
+    uri = os.getenv("NEO4J_URI")
+    user = os.getenv("NEO4J_USER")
+    password = os.getenv("NEO4J_PASSWORD")
+    
+    if uri and user and password:
+        driver = GraphDatabase.driver(uri, auth=(user, password))
+        driver.verify_connectivity()
+        print("✅ Neo4j базасы сәтті қосылды!")
+    else:
+        print("⚠️ Neo4j деректері .env файлында жоқ. Тезаурус жұмыс істемейді.")
+
+except Exception as e:
+    print(f"⚠️ ҚАТЕ: Neo4j қосылмады. Сайт жұмыс істей береді, бірақ Тезауруссыз. Қате: {e}")
+    driver = None
+
+# Закрываем драйвер при выходе, только если он был создан
+if driver:
+    atexit.register(lambda: driver.close())
 
 
 def load_data():
@@ -150,39 +167,37 @@ def analyze_json():
         "date": date
     }
 
+    # Получаем отчет от NLP модуля
     report = analyzer.analyze_single_message(message_to_analyze)
+    
+    # [ИСПРАВЛЕНО] Извлекаем данные из вложенного словаря analysis_report
+    analysis_data = report.get("analysis_report", {})
+    sentiment_data = analysis_data.get("general_sentiment", {})
 
     try:
         data = load_data()
+        
+        # Собираем результат для сохранения
         analysis_result = {
-            "source": report.get("channel", channel),
-            "date": report.get("date", date),
-            "text": report.get("text", text),
+            "source": report.get("source_info", {}).get("channel", channel),
+            "date": report.get("source_info", {}).get("date", date),
+            "text": report.get("original_text", text),
 
-            "io_type": report.get("IO_TYPE")
-                        or report.get("ioType")
-                        or report.get("io_type"),
+            # Правильные пути к данным из nlp.py
+            "io_type": analysis_data.get("predicted_info_operation_type"),
+            
+            # Берем лейбл эмоции (Positive/Negative/Neutral)
+            "emo_eval": sentiment_data.get("label"),
 
-            "emo_eval": report.get("EMO_EVAL")
-                        or report.get("emoEval")
-                        or report.get("emotion")
-                        or report.get("emo_eval"),
+            # Превращаем булево значение (True/False) в строку, если нужно
+            "fake_claim": str(analysis_data.get("is_anomaly")),
 
-            "fake_claim": report.get("FAKE_CLAIM")
-                          or report.get("fakeClaim")
-                          or report.get("fake_claim")
-                          or report.get("fake"),
+            "cmt_sent": None, # Этот параметр пока не используется
 
-            "cmt_sent": report.get("CMT_SENT")
-                         or report.get("comment")
-                         or report.get("cmtSent")
-                         or report.get("cmt_sent"),
-
-            "annotations": report.get("annotations")
-                           or report.get("ner")
-                           or []
+            "annotations": analysis_data.get("named_entities_recognition", [])
         }
 
+        # Сохраняем в начало списка
         data.insert(0, analysis_result)
         save_data(data)
 
@@ -203,21 +218,7 @@ def delete_record(record_id):
 
 @app.route("/analytics")
 def analytics_page():
-    analitika_path = Path("analitika_kk.py")
-    if analitika_path.exists():
-        try:
-            subprocess.Popen([sys.executable, "-m", "streamlit", "run", str(analitika_path)])
-            webbrowser.open("http://localhost:8504")
-            return "<h3>Аналитика ашылуда...</h3>"
-        except Exception as e:
-            return f"<h3>Қате: {e}</h3>"
-    else:
-        return "<h3>Файл analitika_kk.py табылған жоқ!</h3>"
-
-
-# -------------------------------------------------
-# ТЕЗАУРУС БӨЛІМІ (жаңартылған - екінші кодтың логикасы бойынша)
-# -------------------------------------------------
+    return redirect("http://localhost:8501")
 
 def get_all_terms(language=None):
     """Get all terms from database (for dropdown)"""

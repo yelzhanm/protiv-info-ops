@@ -2,3 +2,6 @@
 *env
 
 *venv
+
+*_pycache
+*.pkl
