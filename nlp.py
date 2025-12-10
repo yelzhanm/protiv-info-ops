@@ -9,10 +9,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from transformers import pipeline, logging
 from datetime import datetime
+from pathlib import Path
 
-# --- ГЛОБАЛДЫ ПАРАМЕТРЛЕР ---
-THESAURUS_FILE = r"C:\Users\User\Desktop\protiv-info-ops\thesaurus.json"
-TRAINING_DATA_FILE = r"C:\Users\User\Desktop\protiv-info-ops\project.json"
+BASE_DIR = Path(__file__).resolve().parent
+
+THESAURUS_FILE = BASE_DIR / "data" / "thesaurus.json"
+TRAINING_DATA_FILE = BASE_DIR / "data" / "project.json"
+
 OLLAMA_MODEL = 'llama3'
 
 logging.set_verbosity_error()

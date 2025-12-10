@@ -13,33 +13,29 @@ from neo4j import GraphDatabase
 import atexit
 import urllib.parse
 from dotenv import load_dotenv
+from pathlib import Path
 
 
-# 🔹 NLP Analyzer импорт
 from nlp import NLPAnalyzer
 
-# -------------------------------------------------
-# Flask қосу
-# -------------------------------------------------
 app = Flask(__name__)
 CORS(app)
 
 DATA_FILE = "project.json"
 
-# -------------------------------------------------
-# NLP модельдері
-# -------------------------------------------------
+
 nlp = spacy.load("ru_core_news_sm")
 analyzer = NLPAnalyzer()
-# Егер файл жолы сізде басқа болса — өзгертіңіз
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_FILE_PATH = BASE_DIR / "data" / "project.json"
+
+DATA_FILE = str(DATA_FILE_PATH)
+
 try:
-    analyzer.train_models_from_file(r"C:\Users\User\Desktop\protiv-info-ops\project.json")
+    analyzer.train_models_from_file(str(DATA_FILE_PATH))
 except Exception as e:
     print("⚠ NLP модельдерін жүктеу/оқыту кезінде қате:", e)
-
-# -------------------------------------------------
-# Neo4j connection
-# -------------------------------------------------
 
 
 load_dotenv()
@@ -49,9 +45,7 @@ driver = GraphDatabase.driver(
 )
 atexit.register(lambda: driver.close())
 
-# -------------------------------------------------
-# JSON оқу / жазу
-# -------------------------------------------------
+
 def load_data():
     if not os.path.exists(DATA_FILE):
         return []
@@ -66,10 +60,6 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-
-# -------------------------------------------------
-# Classifier
-# -------------------------------------------------
 def classify_text(text):
     text_lower = text.lower()
     io_type, emo_eval, fake_claim = "DEMORALIZATION", "Neutral", "False"
@@ -85,10 +75,6 @@ def classify_text(text):
 
     return io_type, emo_eval, fake_claim
 
-
-# -------------------------------------------------
-# NER-аннотация
-# -------------------------------------------------
 def annotate_text(text):
     doc = nlp(text)
     label_map = {
@@ -111,18 +97,10 @@ def annotate_text(text):
             })
     return annotations
 
-
-# -------------------------------------------------
-# Басты бет
-# -------------------------------------------------
 @app.route("/")
 def index():
     return render_template("index.html")
 
-
-# -------------------------------------------------
-# ADMIN page (өзгертілген)
-# -------------------------------------------------
 @app.route("/admin", methods=["GET", "POST"])
 def admin_page():
     data = load_data()
@@ -153,9 +131,6 @@ def admin_page():
     show_analysis = False
     return render_template("admin.html", data=data, show_analysis=show_analysis)
 
-# -------------------------------------------------
-# 🔥 NLP талдау нәтижесін автоматты түрде тарихқа сақтайтын analyze()
-# -------------------------------------------------
 @app.route("/analyze", methods=["POST"])
 def analyze_json():
     req_data = request.get_json()
@@ -175,20 +150,15 @@ def analyze_json():
         "date": date
     }
 
-    # 🔹 Анализ жасау
     report = analyzer.analyze_single_message(message_to_analyze)
 
-    # ---------- 🔥 ТАЛДАУДЫ ТАРИХҚА САҚТАУ ----------
     try:
         data = load_data()
-
-        # ⚡ Мұнда — универсалды формат, барлық мүмкін кілттерді ұстайды
         analysis_result = {
             "source": report.get("channel", channel),
             "date": report.get("date", date),
             "text": report.get("text", text),
 
-            # NLPAnalyzer қандай форматта қайтарса да — бәрін ұстап алады
             "io_type": report.get("IO_TYPE")
                         or report.get("ioType")
                         or report.get("io_type"),
@@ -208,7 +178,6 @@ def analyze_json():
                          or report.get("cmtSent")
                          or report.get("cmt_sent"),
 
-            # аннотациялар
             "annotations": report.get("annotations")
                            or report.get("ner")
                            or []
@@ -222,9 +191,6 @@ def analyze_json():
 
     return jsonify(report)
 
-# -------------------------------------------------
-# Delete record
-# -------------------------------------------------
 @app.route("/delete/<int:record_id>", methods=["POST"])
 def delete_record(record_id):
     data = load_data()
@@ -235,17 +201,13 @@ def delete_record(record_id):
 
     return redirect(url_for("admin_page"))
 
-
-# -------------------------------------------------
-# Analytics page
-# -------------------------------------------------
 @app.route("/analytics")
 def analytics_page():
     analitika_path = Path("analitika_kk.py")
     if analitika_path.exists():
         try:
             subprocess.Popen([sys.executable, "-m", "streamlit", "run", str(analitika_path)])
-            webbrowser.open("http://localhost:8501")
+            webbrowser.open("http://localhost:8504")
             return "<h3>Аналитика ашылуда...</h3>"
         except Exception as e:
             return f"<h3>Қате: {e}</h3>"
