@@ -1,264 +1,828 @@
-<!DOCTYPE html>
-<html lang="kk">
-<head>
-  <meta charset="UTF-8">
-  <title>Администратор панелі</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Poppins', 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #d1fae5, #a7f3d0, #6ee7b7);
-      color: #064e3b;
-      padding: 30px;
+{% extends "base.html" %}
+
+{% block title %}{{ t.admin_panel }} - {{ t.app_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .admin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .admin-grid-full {
+    grid-column: 1 / -1;
+  }
+
+  /* NLP Analysis Section */
+  .nlp-section {
+    position: sticky;
+    top: 20px;
+  }
+
+  .analysis-form textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  .analysis-results {
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .analysis-results.show {
+    display: block;
+  }
+
+  .result-card {
+    background: var(--bg-main);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .result-card h5 {
+    color: var(--primary);
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .result-table {
+    width: 100%;
+    font-size: 0.9rem;
+  }
+
+  .result-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-table td:first-child {
+    font-weight: 600;
+    color: var(--text-muted);
+    width: 140px;
+  }
+
+  .entity-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin: 2px;
+    background: var(--primary);
+    color: white;
+  }
+
+  .term-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin: 2px;
+    background: var(--success-light);
+    color: var(--success-dark);
+  }
+
+  .threat-level {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+
+  .threat-level-1,
+  .threat-level-2 {
+    color: var(--success);
+  }
+
+  .threat-level-3 {
+    color: var(--warning);
+  }
+
+  .threat-level-4,
+  .threat-level-5 {
+    color: var(--danger);
+  }
+
+  /* Message Feed Section */
+  .message-feed-section {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .table-wrapper {
+    background: var(--bg-card);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clickable-row:hover {
+    background: var(--success-light) !important;
+    transform: translateX(2px);
+  }
+
+  .clickable-row.selected {
+    background: var(--success-light) !important;
+    border-left: 4px solid var(--success);
+  }
+
+  .text-preview {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .type-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .type-demoralization {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .type-disinformation {
+    background: var(--danger-light);
+    color: var(--danger-dark);
+  }
+
+  .type-intimidation {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .type-hate_incitement {
+    background: #fecaca;
+    color: #7f1d1d;
+  }
+
+  /* Message Analysis Panel */
+  .analysis-panel {
+    position: sticky;
+    top: 20px;
+  }
+
+  .analysis-content {
+    background: var(--bg-main);
+    border-radius: 8px;
+    padding: 1.5rem;
+    min-height: 200px;
+  }
+
+  .analysis-content.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: var(--text-muted);
+    padding: 3rem 1.5rem;
+  }
+
+  .analysis-content.empty i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .info-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--success);
+  }
+
+  .info-item.danger {
+    border-left-color: var(--danger);
+  }
+
+  .info-item.warning {
+    border-left-color: var(--warning);
+  }
+
+  .info-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .info-value {
+    font-weight: 600;
+    color: var(--text-main);
+  }
+
+  .message-text-box {
+    background: white;
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin-top: 1rem;
+    line-height: 1.6;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  /* Loading Spinner */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .loading-overlay.show {
+    display: flex;
+  }
+
+  .loading-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--border);
+    border-top-color: var(--success);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
     }
 
-    h1 {
-      text-align: center;
-      color: #065f46;
-      font-size: 2rem;
-      margin-bottom: 25px;
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .admin-grid {
+      grid-template-columns: 1fr;
     }
 
-    .dashboard {
-      display: grid;
-      grid-template-columns: 2fr 1.2fr;
-      gap: 20px;
+    .nlp-section,
+    .analysis-panel {
+      position: static;
     }
+  }
 
-    section {
-      background: rgba(255,255,255,0.95);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
+  /* DataTables Custom Styling */
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: var(--success) !important;
+    color: white !important;
+    border-color: var(--success) !important;
+  }
 
-    h2 {
-      margin-bottom: 10px;
-      color: #047857;
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+  .dataTables_wrapper .dataTables_filter input {
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+  }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-      background: #fff;
-      border-radius: 8px;
-      overflow: hidden;
-    }
+  .dataTables_wrapper .dataTables_length select {
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+</style>
+{% endblock %}
 
-    th {
-      background: #10b981;
-      color: white;
-      padding: 10px;
-    }
-
-    td {
-      padding: 8px;
-      border-bottom: 1px solid #a7f3d0;
-      word-wrap: break-word;
-    }
-
-    tr:hover {
-      background: #ecfdf5;
-      cursor: pointer;
-    }
-
-    button {
-      background: #10b981;
-      border: none;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    button:hover {
-      background: #059669;
-    }
-
-    .analysis-box {
-      background: #ecfdf5;
-      border: 1.5px solid #10b981;
-      padding: 15px;
-      border-radius: 10px;
-    }
-
-    .text-block {
-      background: #f9fafb;
-      border-radius: 8px;
-      padding: 10px;
-      margin-top: 8px;
-      word-wrap: break-word;
-    }
-
-    .terms {
-      grid-column: 1 / 3;
-      text-align: center;
-    }
-
-    .open-thesaurus {
-      display: inline-block;
-      background: #10b981;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: 0.3s;
-    }
-
-    .open-thesaurus:hover {
-      background: #059669;
-    }
-
-    @media (max-width: 1000px) {
-      .dashboard { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-
-<body>
-  <h1><i class="fas fa-user-shield"></i> Администратор панелі</h1>
-
-  <div class="dashboard">
-
-  <!-- 🔬 NLP Талдау (Енді бірінші және кең баған) -->
-  <section class="feed" style="grid-column: 1 / 2;">
-    <h2><i class="fas fa-robot"></i> NLP-Талдау Жүйесі</h2>
-
-    <form id="analysis-form">
-        <div class="form-group">
-            <label for="text-input">Талдауға арналған мәтін:</label>
-            <textarea id="text-input" rows="7"></textarea>
-        </div>
-
-        <div class="form-group">
-            <label for="channel-input">Канал:</label>
-            <input type="text" id="channel-input">
-        </div>
-
-        <div class="form-group">
-            <label for="date-input">Дата:</label>
-            <input type="datetime-local" id="date-input">
-        </div>
-
-        <button type="submit" id="analyze-button">Талдау</button>
-    </form>
-
-    <div id="loader" class="hidden">🔄 Талдау жүріп жатыр...</div>
-
-    <section id="results" class="hidden">
-        <h2>📌 Жалпы ақпарат</h2>
-        <table id="general-table"></table>
-
-        <h2>🧩 NER — Атауларды тану</h2>
-        <table id="ner-table"></table>
-
-        <h2>📚 Тезаурус терминдері</h2>
-        <table id="thesaurus-table"></table>
-
-        <h2>🧠 LLM сараптамасы</h2>
-        <div id="llm-summary" class="summary-box"></div>
-    </section>
-
-    <div id="error-message" class="hidden"></div>
-  </section>
-
-  <!-- 📨 Message Feed (Тар баған, аз орын алады) -->
-  <section class="feed" style="grid-column: 2 / 3; max-height: 80vh; overflow-y: auto;">
-    <h2><i class="fas fa-envelope"></i> Message Feed</h2>
-
-    <table id="messageTable">
-      <thead>
-        <tr>
-          <th>Канал</th>
-          <th>Дата</th>
-          <th>Текст</th>
-          <th>IO_type</th>
-          <th>EMO_eval</th>
-          <th>Fake_claim</th>
-          <th>Әрекет</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in data %}
-          {% if item.text or item.source or item.io_type or item.emo_eval or item.fake_claim %}
-          <tr data-source="{{ item.source }}" 
-              data-date="{{ item.date }}" 
-              data-text="{{ item.text }}" 
-              data-io="{{ item.io_type }}" 
-              data-emo="{{ item.emo_eval }}" 
-              data-fake="{{ item.fake_claim }}">
-
-            {% if item.source %}<td>{{ item.source }}</td>{% else %}<td>—</td>{% endif %}
-            {% if item.date %}<td>{{ item.date }}</td>{% else %}<td>—</td>{% endif %}
-            {% if item.text %}<td>{{ item.text }}</td>{% else %}<td>—</td>{% endif %}
-            {% if item.io_type %}<td>{{ item.io_type }}</td>{% else %}<td>—</td>{% endif %}
-            {% if item.emo_eval %}<td>{{ item.emo_eval }}</td>{% else %}<td>—</td>{% endif %}
-            {% if item.fake_claim %}<td>{{ item.fake_claim }}</td>{% else %}<td>—</td>{% endif %}
-
-            <td>
-              <form method="POST" action="{{ url_for('delete_record', record_id=loop.index0) }}" style="display:inline;">
-                <button type="submit">🗑 Өшіру</button>
-              </form>
-            </td>
-          </tr>
-          {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-
-  </section>
-
-    <!-- 🔍 Message Analysis -->
-    <section class="analysis">
-      <h2><i class="fas fa-magnifying-glass-chart"></i> Message Analysis</h2>
-      <div class="analysis-box">
-        <p><strong>Source:</strong> <span id="aSource">—</span></p>
-        <p><strong>Date:</strong> <span id="aDate">—</span></p>
-        <p><strong>IO Type:</strong> <span id="aIO">—</span></p>
-        <p><strong>Fake Claim:</strong> <span id="aFake">—</span></p>
-        <p><strong>Emo Eval:</strong> <span id="aEmo">—</span></p>
-        <p><strong>Text:</strong></p>
-        <p id="aText" class="text-block">Хабарламаны таңдаңыз...</p>
-      </div>
-    </section>
-
-    <!-- 📘 Terms -->
-    <section class="terms">
-      <h2><i class="fas fa-book"></i> Terms</h2>
-      <p>Терминдер базасын тезаурус бетінде өңдеуге болады.</p>
-      <a href="{{ url_for('thesaurus_page') }}" class="open-thesaurus">
-        <i class="fas fa-link"></i> Тезаурусқа өту
-      </a>
-    </section>
-
+{% block content %}
+<div class="container-fluid">
+  <div class="mb-4">
+    <h1 class="h3 mb-1">
+      <i class="fas fa-user-shield"></i>
+      {{ t.admin_panel }}
+    </h1>
+    <p class="text-muted">Хабарламаларды талдау және басқару</p>
   </div>
 
+  <div class="admin-grid">
+    <!-- NLP Analysis Section (Left) -->
+    <div class="nlp-section">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-robot"></i>
+          {{ t.nlp_analysis }}
+        </div>
+        <div class="card-body">
+          <form id="analysisForm" class="analysis-form">
+            <div class="mb-3">
+              <label for="textInput" class="form-label">{{ t.text }}</label>
+              <textarea class="form-control" id="textInput" rows="6" placeholder="{{ t.enter_text }}"
+                required></textarea>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="channelInput" class="form-label">{{ t.channel }}</label>
+                <input type="text" class="form-control" id="channelInput" placeholder="Telegram, Twitter..."
+                  value="Manual Input">
+              </div>
+              <div class="col-md-6">
+                <label for="dateInput" class="form-label">{{ t.date }}</label>
+                <input type="datetime-local" class="form-control" id="dateInput">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">
+              <i class="fas fa-microscope"></i>
+              {{ t.analyze }}
+            </button>
+          </form>
+
+          <!-- Analysis Results -->
+          <div id="analysisResults" class="analysis-results mt-4">
+            <hr>
+            <h5><i class="fas fa-clipboard-check"></i> Талдау нәтижелері</h5>
+
+            <!-- General Info -->
+            <div class="result-card">
+              <h5><i class="fas fa-info-circle"></i> Жалпы ақпарат</h5>
+              <table class="result-table">
+                <tr>
+                  <td>IO түрі:</td>
+                  <td><span id="resIOType" class="badge bg-primary"></span></td>
+                </tr>
+                <tr>
+                  <td>Фейк деректеме:</td>
+                  <td><span id="resFakeClaim" class="badge"></span></td>
+                </tr>
+                <tr>
+                  <td>Эмоция:</td>
+                  <td><span id="resEmotion"></span></td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- NER Entities -->
+            <div class="result-card">
+              <h5><i class="fas fa-tag"></i> Атаулар (NER)</h5>
+              <div id="resEntities"></div>
+            </div>
+
+            <!-- Military Terms -->
+            <div class="result-card">
+              <h5><i class="fas fa-book"></i> Әскери терминдер</h5>
+              <div id="resTerms"></div>
+            </div>
+
+            <!-- LLM Summary -->
+            <div class="result-card">
+              <h5><i class="fas fa-brain"></i> LLM талдауы</h5>
+              <p id="resSummary" class="mb-2"></p>
+              <div id="resThreat"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Feed Section (Right) -->
+    <div class="message-feed-section">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-stream"></i>
+          {{ t.message_feed }}
+        </div>
+        <div class="card-body">
+          <div class="table-wrapper">
+            <table id="messageTable" class="table table-hover table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>{{ t.source }}</th>
+                  <th>{{ t.date }}</th>
+                  <th>{{ t.text }}</th>
+                  <th>{{ t.io_type }}</th>
+                  <th>{{ t.emo_eval }}</th>
+                  <th>{{ t.fake_claim }}</th>
+                  <th>Әрекет</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in data %}
+                <tr class="clickable-row" data-id="{{ item.id }}" data-source="{{ item.source or '—' }}"
+                  data-date="{{ item.date or '—' }}" data-text="{{ item.text or '—' }}"
+                  data-io="{{ item.io_type or '—' }}" data-emo="{{ item.emo_eval or '—' }}"
+                  data-fake="{{ item.fake_claim or '—' }}">
+                  <td>{{ item.source or '—' }}</td>
+                  <td>{{ item.date[:16] if item.date else '—' }}</td>
+                  <td><span class="text-preview">{{ item.text or '—' }}</span></td>
+                  <td>
+                    {% if item.io_type %}
+                    <span class="type-badge type-{{ item.io_type.lower().replace(' ', '_') }}">
+                      {{ item.io_type }}
+                    </span>
+                    {% else %}
+                    —
+                    {% endif %}
+                  </td>
+                  <td>{{ item.emo_eval or '—' }}</td>
+                  <td>
+                    {% if item.fake_claim == 'True' %}
+                    <span class="badge bg-danger">{{ t.true }}</span>
+                    {% elif item.fake_claim == 'False' %}
+                    <span class="badge bg-success">{{ t.false }}</span>
+                    {% else %}
+                    —
+                    {% endif %}
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="{{ item.id }}">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Analysis Panel (Full Width) -->
+    <div class="admin-grid-full">
+      <div class="card analysis-panel">
+        <div class="card-header">
+          <i class="fas fa-magnifying-glass-chart"></i>
+          {{ t.message_analysis }}
+        </div>
+        <div class="card-body">
+          <div id="analysisContent" class="analysis-content empty">
+            <i class="fas fa-hand-pointer"></i>
+            <p>Хабарламаны таңдаңыз</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terms Link (Full Width) -->
+    <div class="admin-grid-full">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="fas fa-book"></i>
+            {{ t.thesaurus }}
+          </h5>
+          <p class="card-text text-muted">
+            Терминдер базасын тезаурус бетінде өңдеуге болады
+          </p>
+          <a href="{{ url_for('thesaurus_page') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-right"></i>
+            Тезаурусқа өту
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-content">
+    <div class="spinner"></div>
+    <h5>{{ t.analyzing }}</h5>
+    <p class="text-muted mb-0">Күте тұрыңыз...</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const rows = document.querySelectorAll("#messageTable tbody tr");
-
-  rows.forEach(row => {
-    row.addEventListener("click", () => {
-      document.getElementById("aSource").textContent = row.dataset.source || "—";
-      document.getElementById("aDate").textContent = row.dataset.date || "—";
-      document.getElementById("aIO").textContent = row.dataset.io || "—";
-      document.getElementById("aFake").textContent = row.dataset.fake || "—";
-      document.getElementById("aEmo").textContent = row.dataset.emo || "—";
-      document.getElementById("aText").textContent = row.dataset.text || "—";
-
-      document.querySelector(".analysis").scrollIntoView({ behavior: "smooth" });
+  $(document).ready(function () {
+    // Initialize DataTable
+    const table = $('#messageTable').DataTable({
+      order: [[1, 'desc']], // Sort by date
+      pageLength: 25,
+      language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/kk.json'
+      }
     });
-  });
-});
-</script>
 
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-</body>
-</html>
+    // Row click handler
+    $('#messageTable tbody').on('click', 'tr', function (e) {
+      // Ignore if clicked on delete button
+      if ($(e.target).closest('.delete-btn').length) return;
+
+      // Remove previous selection
+      $('#messageTable tbody tr').removeClass('selected');
+      $(this).addClass('selected');
+
+      // Get data
+      const data = {
+        id: $(this).data('id'),
+        source: $(this).data('source'),
+        date: $(this).data('date'),
+        text: $(this).data('text'),
+        io: $(this).data('io'),
+        emo: $(this).data('emo'),
+        fake: $(this).data('fake')
+      };
+
+      // Display in analysis panel
+      displayMessageAnalysis(data);
+    });
+
+    // Display message analysis
+    function displayMessageAnalysis(data) {
+      const content = $('#analysisContent');
+      content.removeClass('empty');
+
+      // Determine fake badge class
+      let fakeClass = 'bg-secondary';
+      if (data.fake === 'True') fakeClass = 'bg-danger';
+      else if (data.fake === 'False') fakeClass = 'bg-success';
+
+      // Determine emotion class
+      let emoClass = '';
+      if (data.emo && data.emo.toLowerCase().includes('positive')) emoClass = 'success';
+      else if (data.emo && data.emo.toLowerCase().includes('negative')) emoClass = 'danger';
+
+      content.html(`
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Дереккөз</div>
+                        <div class="info-value">${data.source}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Күні</div>
+                        <div class="info-value">${data.date}</div>
+                    </div>
+                    <div class="info-item ${data.io !== '—' ? '' : 'warning'}">
+                        <div class="info-label">IO түрі</div>
+                        <div class="info-value">${data.io}</div>
+                    </div>
+                    <div class="info-item ${emoClass}">
+                        <div class="info-label">Эмоция</div>
+                        <div class="info-value">${data.emo}</div>
+                    </div>
+                    <div class="info-item ${data.fake === 'True' ? 'danger' : ''}">
+                        <div class="info-label">Фейк деректеме</div>
+                        <div class="info-value">
+                            <span class="badge ${fakeClass}">${data.fake}</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ID</div>
+                        <div class="info-value">#${data.id}</div>
+                    </div>
+                </div>
+                <div>
+                    <h6 class="mb-2"><i class="fas fa-align-left"></i> Мәтін:</h6>
+                    <div class="message-text-box">${data.text}</div>
+                </div>
+            `);
+
+      // Scroll to analysis panel
+      $('html, body').animate({
+        scrollTop: content.offset().top - 100
+      }, 400);
+    }
+
+    // Delete button handler
+    $('.delete-btn').on('click', function (e) {
+      e.stopPropagation();
+      const id = $(this).data('id');
+
+      Swal.fire({
+        title: '{{ t.confirm_delete }}?',
+        text: 'Бұл әрекетті қайтару мүмкін емес',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '{{ t.yes }}, өшіру',
+        cancelButtonText: '{{ t.cancel }}'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          deleteRecord(id);
+        }
+      });
+    });
+
+    // Delete record function
+    function deleteRecord(id) {
+      $.ajax({
+        url: `/delete/${id}`,
+        method: 'POST',
+        success: function () {
+          Swal.fire({
+            icon: 'success',
+            title: '{{ t.success }}',
+            text: 'Жазба өшірілді',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          // Remove row from table
+          table.row($(`tr[data-id="${id}"]`)).remove().draw();
+        },
+        error: function () {
+          Swal.fire({
+            icon: 'error',
+            title: '{{ t.error }}',
+            text: 'Жазба өшірілмеді'
+          });
+        }
+      });
+    }
+
+    // Analysis form submission
+    $('#analysisForm').on('submit', function (e) {
+      e.preventDefault();
+
+      const text = $('#textInput').val().trim();
+      const channel = $('#channelInput').val().trim();
+      let date = $('#dateInput').val();
+
+      if (!text) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Мәтін енгізіңіз',
+          text: 'Талдау үшін мәтін міндетті'
+        });
+        return;
+      }
+
+      // Set current date if empty
+      if (!date) {
+        const now = new Date();
+        date = now.toISOString().slice(0, 19);
+      } else {
+        date = date.replace('T', ' ') + ':00';
+      }
+
+      // Show loading
+      $('#loadingOverlay').addClass('show');
+
+      // Send request
+      $.ajax({
+        url: '/api/analyze',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          text: text,
+          channel: channel,
+          date: date
+        }),
+        success: function (data) {
+          $('#loadingOverlay').removeClass('show');
+          displayAnalysisResults(data);
+
+          // Add to table
+          addRowToTable(data);
+
+          // Show success
+          Swal.fire({
+            icon: 'success',
+            title: '{{ t.analysis_complete }}',
+            timer: 2000,
+            showConfirmButton: false
+          });
+
+          // Clear form
+          $('#textInput').val('');
+        },
+        error: function (xhr) {
+          $('#loadingOverlay').removeClass('show');
+          Swal.fire({
+            icon: 'error',
+            title: '{{ t.error }}',
+            text: xhr.responseJSON?.detail || 'Талдау сәтсіз аяқталды'
+          });
+        }
+      });
+    });
+
+    // Display analysis results
+    function displayAnalysisResults(data) {
+      const analysis = data.analysis_report;
+      const sentiment = analysis.general_sentiment;
+
+      // IO Type
+      $('#resIOType').text(analysis.predicted_info_operation_type || '—');
+
+      // Fake Claim
+      const fakeText = analysis.is_anomaly ? '{{ t.true }}' : '{{ t.false }}';
+      const fakeClass = analysis.is_anomaly ? 'bg-danger' : 'bg-success';
+      $('#resFakeClaim').text(fakeText).removeClass().addClass(`badge ${fakeClass}`);
+
+      // Emotion
+      $('#resEmotion').html(`
+                <span class="badge bg-${sentiment.label.includes('POSITIVE') ? 'success' : sentiment.label.includes('NEGATIVE') ? 'danger' : 'secondary'}">
+                    ${sentiment.label}
+                </span>
+                <small class="text-muted">(${(sentiment.score * 100).toFixed(1)}%)</small>
+            `);
+
+      // Entities
+      if (analysis.named_entities_recognition.length > 0) {
+        const entities = analysis.named_entities_recognition.map(e =>
+          `<span class="entity-badge">${e.word} <small>(${e.entity})</small></span>`
+        ).join(' ');
+        $('#resEntities').html(entities);
+      } else {
+        $('#resEntities').html('<small class="text-muted">Атаулар табылмады</small>');
+      }
+
+      // Terms
+      if (analysis.military_terms_analysis.length > 0) {
+        const terms = analysis.military_terms_analysis.map(t =>
+          `<span class="term-badge" title="${t.matched_alias}">${t.term_kz || t.term_ru || t.term_en}</span>`
+        ).join(' ');
+        $('#resTerms').html(terms);
+      } else {
+        $('#resTerms').html('<small class="text-muted">Терминдер табылмады</small>');
+      }
+
+      // LLM Summary
+      const llm = analysis.llm_expert_summary;
+      $('#resSummary').text(llm.summary || 'LLM талдауы жоқ');
+
+      // Threat Level
+      const threat = llm.threat_level || 0;
+      let threatClass = 'threat-level-1';
+      let threatIcon = 'shield-halved';
+      if (threat >= 4) {
+        threatClass = 'threat-level-5';
+        threatIcon = 'skull';
+      } else if (threat === 3) {
+        threatClass = 'threat-level-3';
+        threatIcon = 'triangle-exclamation';
+      }
+
+      $('#resThreat').html(`
+                <div class="threat-level ${threatClass}">
+                    <i class="fas fa-${threatIcon}"></i>
+                    <span>Қауіп деңгейі: ${threat}/5</span>
+                </div>
+            `);
+
+      // Show results
+      $('#analysisResults').addClass('show');
+    }
+
+    // Add row to table
+    function addRowToTable(data) {
+      const analysis = data.analysis_report;
+      const rowData = [
+        data.source_info.channel,
+        data.source_info.date.slice(0, 16),
+        `<span class="text-preview">${data.original_text}</span>`,
+        `<span class="type-badge">${analysis.predicted_info_operation_type}</span>`,
+        analysis.general_sentiment.label,
+        analysis.is_anomaly ?
+          '<span class="badge bg-danger">{{ t.true }}</span>' :
+          '<span class="badge bg-success">{{ t.false }}</span>',
+        '<button class="btn btn-sm btn-secondary" disabled><i class="fas fa-hourglass"></i></button>'
+      ];
+
+      // Add row to top
+      table.row.add(rowData).draw(false);
+
+      // Scroll to top
+      $('#messageTable').closest('.dataTables_wrapper').find('.dataTables_scrollBody').scrollTop(0);
+    }
+  });
+</script>
+{% endblock %}
