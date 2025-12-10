@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t.welcome }} - {{ t.app_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+
+    .login-container {
+        max-width: 450px;
+        width: 100%;
+        padding: 20px;
+    }
+
+    .login-card {
+        background: var(--bg-card);
+        border-radius: 16px;
+        padding: 3rem 2.5rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .logo-section {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .logo-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--success), var(--success-dark));
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .logo-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .logo-section h2 {
+        color: var(--primary);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .logo-section p {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .role-selector {
+        margin-bottom: 1.5rem;
+    }
+
+    .role-btn {
+        width: 100%;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+        border: 2px solid var(--border);
+        background: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .role-btn:hover {
+        border-color: var(--success);
+        background: var(--success-light);
+        transform: translateX(5px);
+    }
+
+    .role-btn.active {
+        border-color: var(--success);
+        background: var(--success-light);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .role-btn input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--success);
+    }
+
+    .role-info {
+        flex: 1;
+        text-align: left;
+    }
+
+    .role-info h5 {
+        margin: 0;
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    .role-info p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .role-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .password-field {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .password-field .form-control {
+        padding-right: 45px;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 5px 10px;
+    }
+
+    .password-toggle:hover {
+        color: var(--success);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <div class="logo-icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <h2>{{ t.app_title }}</h2>
+            <p>{{ t.choose_role }}</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" method="POST" action="/login">
+            <!-- Role Selection -->
+            <div class="role-selector">
+                <label class="role-btn">
+                    <input type="radio" name="role" value="admin" required>
+                    <div class="role-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="role-info">
+                        <h5>{{ t.admin }}</h5>
+                        <p>Жүйе параметрлерін басқару</p>
+                    </div>
+                </label>
+
+                <label class="role-btn">
+                    <input type="radio" name="role" value="analyst" required>
+                    <div class="role-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="role-info">
+                        <h5>{{ t.analyst }}</h5>
+                        <p>Хабарламаларды талдау</p>
+                    </div>
+                </label>
+
+                <label class="role-btn">
+                    <input type="radio" name="role" value="linguist" required>
+                    <div class="role-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="role-info">
+                        <h5>{{ t.linguist }}</h5>
+                        <p>Терминдерді басқару</p>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Password Field -->
+            <div class="password-field">
+                <label for="password" class="form-label">Құпия сөз</label>
+                <input type="password" class="form-control" id="password" name="password" required
+                    placeholder="••••••••">
+                <button type="button" class="password-toggle" onclick="togglePassword()">
+                    <i class="fas fa-eye" id="toggleIcon"></i>
+                </button>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-success w-100">
+                <i class="fas fa-sign-in-alt"></i> Кіру
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Role button highlighting
+    document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Password visibility toggle
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggleIcon');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+
+    // Form submission with validation
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+        const role = document.querySelector('input[name="role"]:checked');
+        const password = document.getElementById('password').value;
+
+        if (!role) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Рөл таңдалмаған',
+                text: 'Рөліңізді таңдаңыз',
+                confirmButtonColor: '#10b981'
+            });
+        }
+    });
+
+    // Show error message if login failed
+    {% if error %}
+    Swal.fire({
+        icon: 'error',
+        title: 'Қате',
+        text: '{{ error }}',
+        confirmButtonColor: '#10b981'
+    });
+    {% endif %}
+</script>
+{% endblock %}

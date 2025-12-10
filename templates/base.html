@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="kk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ақпараттық операцияларға қарсы жүйе{% endblock %}</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- DataTables -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            /* Темно-синяя/серая основа */
+            --primary: #1e293b;
+            /* slate-800 */
+            --primary-light: #334155;
+            /* slate-700 */
+            --secondary: #475569;
+            /* slate-600 */
+
+            /* Зеленые акценты (безопасно) */
+            --success: #10b981;
+            /* emerald-500 */
+            --success-dark: #059669;
+            /* emerald-600 */
+            --success-light: #d1fae5;
+            /* emerald-200 */
+
+            /* Красные акценты (угроза) */
+            --danger: #ef4444;
+            /* red-500 */
+            --danger-dark: #dc2626;
+            /* red-600 */
+            --danger-light: #fecaca;
+            /* red-200 */
+
+            /* Оранжевые акценты (предупреждение) */
+            --warning: #f59e0b;
+            /* amber-500 */
+            --warning-dark: #d97706;
+            /* amber-600 */
+
+            /* Фон */
+            --bg-main: #f8fafc;
+            /* slate-50 */
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            /* slate-900 */
+            --text-muted: #64748b;
+            /* slate-500 */
+            --border: #e2e8f0;
+            /* slate-200 */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--bg-card) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+            font-size: 1.3rem;
+        }
+
+        .navbar-brand i {
+            color: var(--success);
+        }
+
+        /* Language Switcher */
+        .lang-switcher {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 4px 12px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .lang-switcher:focus {
+            border-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 1.2rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), var(--success-dark));
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--success-dark);
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), var(--danger-dark));
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-dark);
+            transform: scale(1.02);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), var(--warning-dark));
+            color: white;
+        }
+
+        /* Forms */
+        .form-control,
+        .form-select {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        /* Tables */
+        .table {
+            background: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 14px;
+        }
+
+        .table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background: var(--success-light);
+            cursor: pointer;
+        }
+
+        .table tbody td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Badges */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+
+        .badge-danger {
+            background: var(--danger-light);
+            color: var(--danger-dark);
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: var(--warning-dark);
+        }
+
+        /* Alerts */
+        .alert {
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+        }
+
+        /* Loading Spinner */
+        .spinner-border {
+            color: var(--success);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: white;
+            margin-top: 3rem;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-halved"></i>
+                Ақпараттық операцияларға қарсы жүйе
+            </a>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Language Switcher -->
+                <select class="lang-switcher" id="langSwitch">
+                    <option value="kk">🇰🇿 Қазақша</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+
+                <!-- User Info (if logged in) -->
+                {% if session.get('role') %}
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i> {{ session.get('role').title() }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Шығу</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2025 Ақпараттық операцияларға қарсы іс-қимыл жүйесі</p>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Language Switcher -->
+    <script>
+        // Сохранение выбранного языка
+        document.getElementById('langSwitch').addEventListener('change', function () {
+            fetch('/set_language', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lang: this.value })
+            }).then(() => location.reload());
+        });
+
+        // Восстановление выбранного языка
+        fetch('/get_language')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('langSwitch').value = data.lang;
+            });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

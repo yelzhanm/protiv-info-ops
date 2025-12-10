@@ -1,0 +1,19 @@
+CREATE TABLE messages (
+    id INTEGER PRIMARY KEY,
+    source TEXT,
+    date TEXT,
+    text TEXT,
+    io_type TEXT,
+    emo_eval TEXT,
+    fake_claim TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE analysis_results (
+    id INTEGER PRIMARY KEY,
+    message_id INTEGER,
+    ner_entities JSON,
+    thesaurus_matches JSON,
+    llm_summary JSON,
+    FOREIGN KEY (message_id) REFERENCES messages(id)
+);

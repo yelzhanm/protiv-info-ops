@@ -1,34 +1,290 @@
-<!DOCTYPE html>
-<html lang="kk">
-<head>
-  <meta charset="UTF-8">
-  <title>Противодействие ИО</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-  <div class="hero">
-    <h1>Ақпараттық операцияларға қарсы іс-қимыл жүйесі</h1>
-    <p>Жүйеге кіру үшін рөліңізді таңдаңыз</p>
-    <div class="roles">
-      <a href="{{ url_for('admin_page') }}" class="role-card">
-        <i class="fas fa-user-shield fa-2x"></i>
-        <h3>Администратор</h3>
-        <p>Жүйе параметрлерін басқару</p>
-      </a>
+{% extends "base.html" %}
 
-     <a href="{{ url_for('analytics_page') }}" target="_blank" class="role-card">
-  <i class="fas fa-user-secret fa-2x"></i>
-  <h3>Аналитик</h3>
-  <p>Хабарламаларды қарау және фейктерді белгілеу</p>
-</a>
+{% block title %}{{ t.welcome }} - {{ t.app_title }}{% endblock %}
 
-      <a href="{{ url_for('thesaurus_page') }}" class="role-card">
-        <i class="fas fa-book fa-2x"></i>
-        <h3>Лингвист / Тезаурус</h3>
-        <p>Терминдерді қосу және өңдеу</p>
-      </a>
+{% block extra_css %}
+<style>
+  .hero-section {
+    text-align: center;
+    padding: 3rem 0 2rem;
+    color: white;
+  }
+
+  .hero-section h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .hero-section p {
+    font-size: 1.2rem;
+    opacity: 0.95;
+    margin-bottom: 3rem;
+  }
+
+  .roles-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .role-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text-main);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .role-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, var(--success), var(--success-dark));
+    transform: scaleX(0);
+    transition: transform 0.4s;
+  }
+
+  .role-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  .role-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .role-icon-wrapper {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    transition: all 0.3s;
+  }
+
+  .role-card:hover .role-icon-wrapper {
+    background: linear-gradient(135deg, var(--success), var(--success-dark));
+    transform: rotate(5deg) scale(1.1);
+  }
+
+  .role-icon-wrapper i {
+    font-size: 3rem;
+    color: white;
+  }
+
+  .role-card h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 1rem;
+  }
+
+  .role-card p {
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .role-features {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+    margin-bottom: 1.5rem;
+  }
+
+  .role-features li {
+    padding: 0.5rem 0;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .role-features li i {
+    color: var(--success);
+    font-size: 0.8rem;
+  }
+
+  .role-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: var(--success-light);
+    color: var(--success-dark);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .stats-section {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-top: 3rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--success);
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+  <h1>{{ t.app_title }}</h1>
+  <p>{{ t.choose_role }}</p>
+</div>
+
+<!-- Roles Container -->
+<div class="roles-container">
+  <!-- Admin Card -->
+  <a href="/admin" class="role-card">
+    <span class="role-badge">Жүйе басқаруы</span>
+    <div class="role-icon-wrapper">
+      <i class="fas fa-user-shield"></i>
     </div>
+    <h3>{{ t.admin }}</h3>
+    <p>Жүйенің барлық функцияларын басқару және мониторинг</p>
+    <ul class="role-features">
+      <li><i class="fas fa-check-circle"></i> Хабарламаларды қарау</li>
+      <li><i class="fas fa-check-circle"></i> NLP-талдау жүргізу</li>
+      <li><i class="fas fa-check-circle"></i> Жазбаларды өшіру</li>
+      <li><i class="fas fa-check-circle"></i> Жүйе параметрлері</li>
+    </ul>
+  </a>
+
+  <!-- Analyst Card -->
+  <a href="/analytics" class="role-card">
+    <span class="role-badge">Деректер талдау</span>
+    <div class="role-icon-wrapper">
+      <i class="fas fa-chart-line"></i>
+    </div>
+    <h3>{{ t.analyst }}</h3>
+    <p>Деректерді визуализациялау және статистикалық талдау</p>
+    <ul class="role-features">
+      <li><i class="fas fa-check-circle"></i> Интерактивті графиктер</li>
+      <li><i class="fas fa-check-circle"></i> Тренд талдауы</li>
+      <li><i class="fas fa-check-circle"></i> Экспорт/импорт</li>
+      <li><i class="fas fa-check-circle"></i> Фильтрлеу</li>
+    </ul>
+  </a>
+
+  <!-- Linguist Card -->
+  <a href="/thesaurus" class="role-card">
+    <span class="role-badge">Терминология</span>
+    <div class="role-icon-wrapper">
+      <i class="fas fa-book"></i>
+    </div>
+    <h3>{{ t.linguist }}</h3>
+    <p>Әскери терминдер тезауруын басқару және өңдеу</p>
+    <ul class="role-features">
+      <li><i class="fas fa-check-circle"></i> Терминдерді қосу</li>
+      <li><i class="fas fa-check-circle"></i> Байланыстарды басқару</li>
+      <li><i class="fas fa-check-circle"></i> 3 тілде жұмыс</li>
+      <li><i class="fas fa-check-circle"></i> Іздеу және сүзу</li>
+    </ul>
+  </a>
+</div>
+
+<!-- Stats Section -->
+<div class="stats-section">
+  <div class="stat-item">
+    <div class="stat-number" id="totalMessages">0</div>
+    <div class="stat-label">Барлық хабарламалар</div>
   </div>
-</body>
-</html>
+  <div class="stat-item">
+    <div class="stat-number" id="analyzedToday">0</div>
+    <div class="stat-label">Бүгін талданған</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number" id="totalTerms">0</div>
+    <div class="stat-label">Тезаурустағы терминдер</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number" id="threatLevel">
+      <i class="fas fa-shield-halved" style="color: var(--success);"></i>
+    </div>
+    <div class="stat-label">Қауіпсіз деңгей</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Загрузка статистики
+  fetch('/api/stats/summary')
+    .then(r => r.json())
+    .then(data => {
+      // Анимация чисел
+      animateNumber('totalMessages', data.total_messages || 0);
+      animateNumber('analyzedToday', data.analyzed_today || 0);
+      animateNumber('totalTerms', data.total_terms || 0);
+    })
+    .catch(err => {
+      console.log('Статистика жүктелмеді:', err);
+      // Демо данные если API не работает
+      animateNumber('totalMessages', 1247);
+      animateNumber('analyzedToday', 23);
+      animateNumber('totalTerms', 156);
+    });
+
+  // Анимация чисел
+  function animateNumber(elementId, target) {
+    const element = document.getElementById(elementId);
+    let current = 0;
+    const increment = target / 50;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        element.textContent = Math.round(target);
+        clearInterval(timer);
+      } else {
+        element.textContent = Math.round(current);
+      }
+    }, 20);
+  }
+
+  // Hover эффекты для карточек
+  document.querySelectorAll('.role-card').forEach(card => {
+    card.addEventListener('mouseenter', function () {
+      this.style.boxShadow = '0 25px 50px rgba(16, 185, 129, 0.2)';
+    });
+
+    card.addEventListener('mouseleave', function () {
+      this.style.boxShadow = '';
+    });
+  });
+</script>
+{% endblock %}
