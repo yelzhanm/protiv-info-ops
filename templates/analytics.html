@@ -3,11 +3,9 @@
 {% block title %}{{ t['analytics'] }} - {{ t['app_title'] }}{% endblock %}
 
 {% block extra_css %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% endblock %}
 
 {% block content %}
-<!-- Header -->
 <div class="mb-8">
     <h1
         class="text-4xl font-display font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-green">
@@ -17,9 +15,7 @@
     <p class="text-gray-400">Деректерді визуализациялау және статистикалық талдау</p>
 </div>
 
-<!-- Stats Cards -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-    <!-- Total Messages -->
     <div class="glass p-6 rounded-2xl hover:shadow-neon-purple transition-all duration-300 group">
         <div class="flex items-center justify-between mb-4">
             <div
@@ -37,7 +33,6 @@
         </div>
     </div>
 
-    <!-- Safe Messages -->
     <div class="glass p-6 rounded-2xl hover:shadow-neon-green transition-all duration-300 group">
         <div class="flex items-center justify-between mb-4">
             <div
@@ -54,7 +49,6 @@
         </div>
     </div>
 
-    <!-- Threats -->
     <div class="glass p-6 rounded-2xl hover:shadow-neon-red transition-all duration-300 group">
         <div class="flex items-center justify-between mb-4">
             <div
@@ -72,7 +66,6 @@
         </div>
     </div>
 
-    <!-- Terms Found -->
     <div class="glass p-6 rounded-2xl hover:shadow-neon-cyan transition-all duration-300 group">
         <div class="flex items-center justify-between mb-4">
             <div
@@ -90,7 +83,6 @@
     </div>
 </div>
 
-<!-- Filters -->
 <div class="glass p-6 rounded-2xl mb-8">
     <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
         <i class="fas fa-filter text-neon-cyan"></i>
@@ -124,9 +116,7 @@
     </div>
 </div>
 
-<!-- Charts Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <!-- Time Series Chart -->
     <div class="glass p-6 rounded-2xl lg:col-span-2">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-lg font-bold flex items-center gap-2">
@@ -143,7 +133,6 @@
         </div>
     </div>
 
-    <!-- IO Types Distribution -->
     <div class="glass p-6 rounded-2xl">
         <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
             <i class="fas fa-chart-pie text-neon-cyan"></i>
@@ -154,7 +143,6 @@
         </div>
     </div>
 
-    <!-- Sentiment Distribution -->
     <div class="glass p-6 rounded-2xl">
         <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
             <i class="fas fa-chart-pie text-neon-green"></i>
@@ -166,9 +154,7 @@
     </div>
 </div>
 
-<!-- Top Lists -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    <!-- Top Sources -->
     <div class="glass p-6 rounded-2xl">
         <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
             <i class="fas fa-ranking-star text-neon-purple"></i>
@@ -177,7 +163,6 @@
         <div id="topSourcesList" class="space-y-2"></div>
     </div>
 
-    <!-- Top Terms -->
     <div class="glass p-6 rounded-2xl">
         <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
             <i class="fas fa-hashtag text-neon-cyan"></i>
@@ -187,7 +172,6 @@
     </div>
 </div>
 
-<!-- Export Section -->
 <div class="glass p-8 rounded-2xl text-center">
     <h2 class="text-2xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-cyan">
         <i class="fas fa-file-export mr-2"></i>
@@ -203,6 +187,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <script>
     let charts = {};
     let analyticsData = null;
