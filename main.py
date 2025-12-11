@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Объединенный сервер - Flask (UI) + FastAPI (API)
-Запуск: python main.py
-"""
-
 import os
 import json
 import sqlite3
@@ -84,7 +77,7 @@ def init_db():
         )
     ''')
     
-    # 🆕 СОЗДАЕМ ИНДЕКСЫ ДЛЯ БЫСТРОГО ПОИСКА
+    # Создаем индексы
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at DESC)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_messages_source ON messages(source)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_messages_date ON messages(date)')
@@ -132,7 +125,7 @@ if driver:
     atexit.register(lambda: driver.close())
 
 def load_thesaurus():
-    """Загрузить тезаурус из JSON (резерв)"""
+    """Загрузить тезаурус из JSON"""
     try:
         if THESAURUS_FILE.exists():
             with open(THESAURUS_FILE, 'r', encoding='utf-8') as f:
@@ -209,8 +202,6 @@ def admin_page():
     if 'role' not in session or session['role'] != 'admin':
         return redirect(url_for('login'))
     
-    # 🆕 ПАГИНАЦИЯ: показываем только первые 10 записей
-    # Остальные загрузятся через API
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM messages ORDER BY created_at DESC LIMIT 10')
@@ -314,6 +305,109 @@ def thesaurus_page():
             
     return render_template('thesaurus.html', all_terms=all_terms)
 
+# 🆕 НОВЫЕ ЭНДПОИНТЫ ДЛЯ ЛИНГВИСТА
+@flask_app.route('/thesaurus/search', methods=['GET'])
+def thesaurus_search():
+    """Поиск термина в тезаурусе"""
+    term = request.args.get('term', '').strip()
+    language = request.args.get('language', 'EN').upper()
+    
+    if not term:
+        return jsonify({'error': 'Термин не указан'}), 400
+    
+    thesaurus = load_thesaurus()
+    results = {}
+    
+    # Ищем термин во всех языках
+    for lang_code in ['kk', 'ru', 'en']:
+        key = f'TT_{lang_code}'
+        for item in thesaurus:
+            if item.get(key) and term.lower() in item.get(key, '').lower():
+                lang_upper = lang_code.upper()
+                results[lang_upper] = {
+                    'term': item.get(key),
+                    'scope_notes': [
+                        item.get(f'SN_{lang_code}')
+                    ],
+                    'relations': {
+                        'BROADER_TERM': [{'term': item.get(f'BT_{lang_code}'), 'language': lang_upper}] if item.get(f'BT_{lang_code}') else [],
+                        'NARROWER_TERM': [{'term': item.get(f'NT_{lang_code}'), 'language': lang_upper}] if item.get(f'NT_{lang_code}') else [],
+                        'RELATED_TERM': [{'term': item.get(f'RT_{lang_code}'), 'language': lang_upper}] if item.get(f'RT_{lang_code}') else [],
+                        'USED_FOR': [{'term': item.get(f'UF_{lang_code}'), 'language': lang_upper}] if item.get(f'UF_{lang_code}') else [],
+                        'PART_OF': [{'term': item.get(f'PT_{lang_code}'), 'language': lang_upper}] if item.get(f'PT_{lang_code}') else [],
+                        'LANGUAGE_EQUIVALENT': [{'term': item.get(f'LE_{lang_code}'), 'language': lang_upper}] if item.get(f'LE_{lang_code}') else []
+                    }
+                }
+                break
+    
+    if not results:
+        return jsonify({'error': 'Термин не найден'}), 404
+    
+    return jsonify({'results': results})
+
+@flask_app.route('/thesaurus/add', methods=['POST'])
+def thesaurus_add():
+    """Добавление нового термина"""
+    term = request.form.get('term', '').strip()
+    language = request.form.get('language', 'EN').upper()
+    scope_note = request.form.get('scope_note', '').strip()
+    
+    if not term:
+        return jsonify({'error': 'Термин не указан'}), 400
+    
+    # Загружаем текущий тезаурус
+    thesaurus = load_thesaurus()
+    
+    # Находим максимальный ID
+    max_id = max([item.get('id', 0) for item in thesaurus], default=0)
+    
+    # Создаем новую запись
+    new_term = {
+        'id': max_id + 1,
+        'TT_kz': term if language == 'KZ' else None,
+        'TT_ru': term if language == 'RU' else None,
+        'TT_en': term if language == 'EN' else None,
+        'SN_kz': scope_note if language == 'KZ' else None,
+        'SN_ru': scope_note if language == 'RU' else None,
+        'SN_en': scope_note if language == 'EN' else None,
+        'BT_kz': None, 'BT_ru': None, 'BT_en': None,
+        'NT_kz': None, 'NT_ru': None, 'NT_en': None,
+        'RT_kz': None, 'RT_ru': None, 'RT_en': None,
+        'UF_kz': None, 'UF_ru': None, 'UF_en': None,
+        'PT_kz': None, 'PT_ru': None, 'PT_en': None,
+        'LE_kz': None, 'LE_ru': None, 'LE_en': None
+    }
+    
+    # Добавляем связь если указана
+    relation_type = request.form.get('relation_type', '').strip()
+    related_term = request.form.get('related_term', '').strip()
+    
+    if relation_type and related_term:
+        lang_suffix = language.lower()
+        if relation_type == 'BT':
+            new_term[f'BT_{lang_suffix}'] = related_term
+        elif relation_type == 'NT':
+            new_term[f'NT_{lang_suffix}'] = related_term
+        elif relation_type == 'RT':
+            new_term[f'RT_{lang_suffix}'] = related_term
+        elif relation_type == 'UF':
+            new_term[f'UF_{lang_suffix}'] = related_term
+        elif relation_type == 'PT':
+            new_term[f'PT_{lang_suffix}'] = related_term
+        elif relation_type == 'LE':
+            new_term[f'LE_{lang_suffix}'] = related_term
+    
+    # Добавляем в список
+    thesaurus.append(new_term)
+    
+    # Сохраняем обратно в файл
+    try:
+        with open(THESAURUS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(thesaurus, f, ensure_ascii=False, indent=4)
+        return jsonify({'success': f'Термин "{term}" успешно добавлен'})
+    except Exception as e:
+        return jsonify({'error': f'Ошибка сохранения: {str(e)}'}), 500
+
 # ==========================================
 # FASTAPI APP (Backend API)
 # ==========================================
@@ -346,7 +440,6 @@ def get_stats_summary():
         'total_terms': len(thesaurus)
     }
 
-# 🆕 НОВЫЙ API ЭНДПОИНТ С ПАГИНАЦИЕЙ
 @api.get("/api/messages/paginated")
 def get_messages_paginated(
     page: int = Query(1, ge=1, description="Номер страницы"),
@@ -355,21 +448,14 @@ def get_messages_paginated(
     date_from: str = Query(None, description="Дата начала (YYYY-MM-DD)"),
     date_to: str = Query(None, description="Дата окончания (YYYY-MM-DD)")
 ):
-    """
-    Получить сообщения с пагинацией
-    
-    Example: /api/messages/paginated?page=2&per_page=10
-    """
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    # Базовый запрос
     query = "SELECT * FROM messages WHERE 1=1"
     count_query = "SELECT COUNT(*) FROM messages WHERE 1=1"
     params = []
     
-    # Фильтры
     if source:
         query += " AND source = ?"
         count_query += " AND source = ?"
@@ -385,22 +471,18 @@ def get_messages_paginated(
         count_query += " AND date <= ?"
         params.append(date_to)
     
-    # Подсчет общего количества
     cursor.execute(count_query, params)
     total = cursor.fetchone()[0]
     
-    # Пагинация
     offset = (page - 1) * per_page
     query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
     params.extend([per_page, offset])
     
-    # Получить данные
     cursor.execute(query, params)
     messages = [dict(row) for row in cursor.fetchall()]
     
     conn.close()
     
-    # Вычисляем количество страниц
     total_pages = (total + per_page - 1) // per_page
     
     return {
@@ -415,7 +497,6 @@ def get_messages_paginated(
         }
     }
 
-# Старый эндпоинт (для совместимости)
 @api.get("/api/messages")
 def get_all_messages(source: str = None, date_from: str = None, date_to: str = None):
     conn = get_db()

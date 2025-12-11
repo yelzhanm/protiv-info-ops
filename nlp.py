@@ -16,10 +16,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 BASE_DIR = Path(__file__).resolve().parent
 THESAURUS_FILE = BASE_DIR / "data" / "thesaurus.json"
 DB_PATH = BASE_DIR / "data" / "db.sqlite"
+
+# 🆕 ФИКСИРОВАННЫЕ КАТЕГОРИИ IO_TYPE
+VALID_IO_TYPES = [
+    "DISINFORMATION",
+    "DEMORALIZATION", 
+    "DISCREDITATION",
+    "INTIMIDATION",
+    "HATE_INCITEMENT",
+    "PANIC_CREATION",
+    "PROVOCATION",
+    "AUTHORITY_UNDERSCORE"
+]
 
 # 🆕 ПЕРЕКЛЮЧЕНИЕ МЕЖДУ OLLAMA И GROQ
 USE_GROQ = os.getenv('USE_GROQ', 'true').lower() == 'true'
@@ -106,6 +117,20 @@ class NLPAnalyzer:
 
         texts = [r[0] for r in rows]
         labels = [r[1] for r in rows]
+        
+        # 🆕 НОРМАЛИЗАЦИЯ МЕТОК К ВАЛИДНЫМ КАТЕГОРИЯМ
+        normalized_labels = []
+        for label in labels:
+            # Попытка найти похожую валидную категорию
+            label_upper = label.upper()
+            if label_upper in VALID_IO_TYPES:
+                normalized_labels.append(label_upper)
+            else:
+                # Если не нашли точное совпадение, берем DISINFORMATION по умолчанию
+                print(f"⚠️ Неизвестная метка '{label}' заменена на DISINFORMATION")
+                normalized_labels.append("DISINFORMATION")
+        
+        labels = normalized_labels
 
         unique_labels = set(labels)
         if len(unique_labels) >= 2:
@@ -144,12 +169,17 @@ class NLPAnalyzer:
 
         thesaurus_matches = self._find_thesaurus_terms(text)
 
-        io_prediction = "Белгісіз"
+        io_prediction = "DISINFORMATION"  # 🆕 ДЕФОЛТНОЕ ЗНАЧЕНИЕ
         if self.io_classifier and self.vectorizer:
             try:
-                io_prediction = self.io_classifier.predict(self.vectorizer.transform([text]))[0]
-            except:
-                pass
+                predicted = self.io_classifier.predict(self.vectorizer.transform([text]))[0]
+                # 🆕 ПРОВЕРКА НА ВАЛИДНОСТЬ
+                if predicted.upper() in VALID_IO_TYPES:
+                    io_prediction = predicted.upper()
+                else:
+                    print(f"⚠️ Модель предсказала невалидную категорию: {predicted}")
+            except Exception as e:
+                print(f"⚠️ Ошибка предсказания: {e}")
 
         is_anomaly = False
         if self.anomaly_model:
