@@ -2,6 +2,7 @@ import json
 import warnings
 import ollama
 import numpy as np
+import sqlite3  # SQLite қосылды
 from rapidfuzz import fuzz
 from sentence_transformers import SentenceTransformer
 from sklearn.ensemble import IsolationForest
@@ -13,15 +14,14 @@ from pathlib import Path
 import joblib
 
 BASE_DIR = Path(__file__).resolve().parent
-
 THESAURUS_FILE = BASE_DIR / "data" / "thesaurus.json"
-TRAINING_DATA_FILE = BASE_DIR / "data" / "project.json"
+# TRAINING_DATA_FILE енді керек емес, DB_PATH қолданамыз
+DB_PATH = BASE_DIR / "data" / "db.sqlite"
 
 OLLAMA_MODEL = 'llama3'
 
 logging.set_verbosity_error()
 warnings.filterwarnings("ignore", category=FutureWarning)
-
 
 class NLPAnalyzer:
     def __init__(self):
@@ -30,7 +30,6 @@ class NLPAnalyzer:
         self.io_classifier = None
         self.vectorizer = None
         self.anomaly_model = None
-        # Hugging Face модельдерін және embedder-ді жүктеу
         self._load_hf_models()
         self.model_path = BASE_DIR / "data" / "models.pkl"
 
@@ -57,24 +56,39 @@ class NLPAnalyzer:
         self.embedder = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
         print("✅ Hugging Face модельдері жүктелді.")
 
-    def train_models_from_file(self, data_file_path):
+    def train_models_from_db(self, db_path=str(DB_PATH)):
+        """Модельдерді SQLite базасынан оқыту"""
         if self.model_path.exists():
-            print("📥 Загружаю сохраненные модели...")
-            models = joblib.load(self.model_path)
-            self.vectorizer = models['vectorizer']
-            self.io_classifier = models['classifier']
-            self.anomaly_model = models['anomaly']
-            print("✅ Модели загружены!")
-            return
+            print("📥 Сақталған модельдер жүктелуде...")
+            try:
+                models = joblib.load(self.model_path)
+                self.vectorizer = models['vectorizer']
+                self.io_classifier = models['classifier']
+                self.anomaly_model = models['anomaly']
+                print("✅ Модельдер жүктелді!")
+                return
+            except Exception as e:
+                print(f"⚠️ Модельді жүктеу қатесі: {e}, қайта оқыту басталады...")
+
+        print("\n--- Модельдерді базадан үйрету басталды ---")
         
-        labeled_data = self._parse_label_studio_data(data_file_path)
-        if not labeled_data:
-            print("⚠ ЕСКЕРТУ: Деректер табылмады, модельдер үйретілмеді.")
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            # Тек io_type бар жазбаларды аламыз (оқыту үшін)
+            cursor.execute("SELECT text, io_type FROM messages WHERE io_type IS NOT NULL AND text IS NOT NULL")
+            rows = cursor.fetchall()
+            conn.close()
+        except Exception as e:
+            print(f"❌ Базадан оқу қатесі: {e}")
             return
 
-        print("\n--- Модельдерді үйрету басталды ---")
-        texts = [item['text'] for item in labeled_data]
-        labels = [item['label'] for item in labeled_data]
+        if not rows:
+            print("⚠️ ЕСКЕРТУ: База бос немесе деректер жоқ.")
+            return
+
+        texts = [r[0] for r in rows]
+        labels = [r[1] for r in rows]
 
         unique_labels = set(labels)
         if len(unique_labels) >= 2:
@@ -82,19 +96,17 @@ class NLPAnalyzer:
             X = self.vectorizer.fit_transform(texts)
             self.io_classifier = LogisticRegression(max_iter=1000, class_weight='balanced')
             self.io_classifier.fit(X, labels)
-            print("✅ АО классификаторы дайын.")
+            print(f"✅ АО классификаторы дайын ({len(rows)} жазба).")
         else:
-            print(f"⚠ Классификатор үйретілмеді. Бір ғана класс бар: {unique_labels}")
+            print(f"⚠️ Классификатор үйретілмеді. Бір ғана класс бар: {unique_labels}")
 
-        baseline_texts = [item['text'] for item in labeled_data if item['label'] not in ['дезинформация', 'провокация']]
-        if not baseline_texts:
-            baseline_texts = texts
+        # Аномалия моделі (барлық мәтіндерге үйретеміз)
         self.anomaly_model = IsolationForest(contamination=0.1, random_state=42)
-        self.anomaly_model.fit(self.embedder.encode(baseline_texts))
+        self.anomaly_model.fit(self.embedder.encode(texts))
         print("✅ Аномалия моделі дайын.")
 
         if self.io_classifier:
-            print("💾 Сохраняю модели...")
+            print("💾 Модельдер сақталуда...")
             joblib.dump({
                 'vectorizer': self.vectorizer,
                 'classifier': self.io_classifier,
@@ -108,7 +120,6 @@ class NLPAnalyzer:
         ner_results = self.ner_model(text)
         sentiment_result = self.sentiment_model(text)[0]
 
-        # Кастом ережелер
         custom_rules = {"РФ": "ORG", "России": "LOC", "ВСУ": "ORG", "Украине": "LOC", "США": "LOC"}
         ner_entities = [{"entity": e.get("entity_group", "UNKNOWN"), "word": e.get("word")} for e in ner_results]
         for entity in ner_entities:
@@ -117,12 +128,17 @@ class NLPAnalyzer:
 
         thesaurus_matches = self._find_thesaurus_terms(text)
 
+        io_prediction = "Белгісіз"
         if self.io_classifier and self.vectorizer:
-            io_prediction = self.io_classifier.predict(self.vectorizer.transform([text]))[0]
-        else:
-            io_prediction = "Классификация мүмкін емес"
+            try:
+                io_prediction = self.io_classifier.predict(self.vectorizer.transform([text]))[0]
+            except:
+                pass
 
-        is_anomaly = True if self.anomaly_model.predict(self.embedder.encode([text]))[0] == -1 else False
+        is_anomaly = False
+        if self.anomaly_model:
+            is_anomaly = True if self.anomaly_model.predict(self.embedder.encode([text]))[0] == -1 else False
+            
         llm_analysis = self._get_llm_summary(text, ner_entities, thesaurus_matches)
 
         return {
@@ -179,48 +195,6 @@ class NLPAnalyzer:
             print(f"⚠ Ollama қатесі: {e}")
             return {"summary": "Ollama-дан жауап алынбады.", "threat_level": -1}
 
-    def _parse_label_studio_data(self, data_file_path):
-        try:
-            with open(data_file_path, 'r', encoding='utf-8') as f:
-                file_content = f.read()
-        except FileNotFoundError: return None
-        if not file_content.strip(): return []
-
-        raw_data = []
-        try: raw_data = json.loads(file_content)
-        except json.JSONDecodeError:
-            try: raw_data = json.loads('[' + file_content.replace('}{', '},{') + ']')
-            except json.JSONDecodeError: return None
-
-        if len(raw_data) == 1 and isinstance(raw_data[0], list):
-            raw_data = raw_data[0]
-
-        parsed_data = []
-        for task in raw_data:
-            if not isinstance(task, dict): continue
-            text = task.get("data", {}).get("text")
-            label = "belgisiz"
-            try:
-                for result_item in task["annotations"][0]["result"]:
-                    if result_item.get("from_name") == "io_type":
-                        label = result_item["value"]["choices"][0]
-                        break
-            except (KeyError, IndexError, TypeError):
-                pass
-            if text: parsed_data.append({"text": text, "label": label})
-        return parsed_data
-
-
-# --- Интерактивті тек басты орыннан іске қосу ---
 if __name__ == "__main__":
     analyzer = NLPAnalyzer()
-    analyzer.train_models_from_file(TRAINING_DATA_FILE)
-    print("✅ Жүйе дайын. Интерактивті режим басталды.")
-    while True:
-        user_text = input("\n>>> Мәтінді енгізіңіз: ")
-        if user_text.lower() == "exit": break
-        channel_name = input(">>> Канал: ")
-        date_str = input(">>> Дата (Enter = қазір): ")
-        if not date_str: date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        report = analyzer.analyze_single_message({"text": user_text, "channel": channel_name, "date": date_str})
-        print(json.dumps(report, ensure_ascii=False, indent=4))
+    analyzer.train_models_from_db()

@@ -10,26 +10,31 @@ import json
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-from flask_cors import CORS
-from dotenv import load_dotenv
-from neo4j import GraphDatabase
 import atexit
 
-from fastapi import FastAPI, HTTPException
+# Flask
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask_cors import CORS
+
+# FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.middleware.cors import CORSMiddleware as FastAPICORS
 from pydantic import BaseModel
 import uvicorn
 
+# Project modules
+from dotenv import load_dotenv
+from neo4j import GraphDatabase
 from nlp import NLPAnalyzer
-from translations import get_translation  # ✅ ИМПОРТ!
+from translations import get_translation
 
 # Загрузка переменных окружения
 load_dotenv()
 
-# Пути
+# ==========================================
+# КОНФИГУРАЦИЯ И ПУТИ
+# ==========================================
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "db.sqlite"
@@ -39,27 +44,17 @@ THESAURUS_FILE = DATA_DIR / "thesaurus.json"
 DATA_DIR.mkdir(exist_ok=True)
 
 # ==========================================
-# FLASK APP (Frontend)
+# БАЗА ДАННЫХ (SQLite)
 # ==========================================
-flask_app = Flask(__name__)
-flask_app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-change-this")
-CORS(flask_app)
-
-# ==========================================
-# TRANSLATIONS CONTEXT PROCESSOR
-# ==========================================
-@flask_app.context_processor
-def inject_translations():
-    """Внедрение переводов во все шаблоны"""
-    lang = session.get('lang', 'kk')  # По умолчанию казахский
-    return {'t': get_translation(lang)}
-
-# ==========================================
-# DATABASE SETUP
-# ==========================================
-def init_db():
-    """Инициализация SQLite базы данных"""
+def get_db():
+    """Получить подключение к БД"""
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    """Инициализация таблиц"""
+    conn = get_db()
     cursor = conn.cursor()
     
     # Таблица сообщений
@@ -93,11 +88,26 @@ def init_db():
     conn.close()
     print("✅ База данных инициализирована")
 
-# Инициализируем БД при старте
 init_db()
 
 # ==========================================
-# NEO4J CONNECTION
+# NLP ANALYZER
+# ==========================================
+analyzer = NLPAnalyzer()
+try:
+    if DB_PATH.exists():
+        # ВАЖНО: Используем метод для чтения из БД, а не из файла
+        # Убедитесь, что в nlp.py есть метод train_models_from_db
+        if hasattr(analyzer, 'train_models_from_db'):
+            analyzer.train_models_from_db(str(DB_PATH))
+        else:
+            print("⚠️ Метод train_models_from_db не найден в nlp.py, пропускаем обучение.")
+    print("✅ NLP моделі жүктелді")
+except Exception as e:
+    print(f"⚠️ NLP моделін жүктеу қатесі: {e}")
+
+# ==========================================
+# NEO4J И ТЕЗАУРУС
 # ==========================================
 driver = None
 try:
@@ -118,28 +128,8 @@ except Exception as e:
 if driver:
     atexit.register(lambda: driver.close())
 
-# ==========================================
-# NLP ANALYZER
-# ==========================================
-analyzer = NLPAnalyzer()
-try:
-    if DB_PATH.exists():
-        analyzer.train_models_from_file(str(DB_PATH))
-    print("✅ NLP моделі жүктелді")
-except Exception as e:
-    print(f"⚠️ NLP моделін жүктеу қатесі: {e}")
-
-# ==========================================
-# HELPER FUNCTIONS
-# ==========================================
-def get_db():
-    """Получить подключение к БД"""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
 def load_thesaurus():
-    """Загрузить тезаурус из JSON"""
+    """Загрузить тезаурус из JSON (резерв)"""
     try:
         if THESAURUS_FILE.exists():
             with open(THESAURUS_FILE, 'r', encoding='utf-8') as f:
@@ -149,120 +139,149 @@ def load_thesaurus():
     return []
 
 # ==========================================
-# FLASK ROUTES - Language
+# FLASK APP (Frontend UI)
 # ==========================================
+flask_app = Flask(__name__)
+flask_app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-change-this")
+CORS(flask_app)
+
+@flask_app.context_processor
+def inject_translations():
+    lang = session.get('lang', 'kk')
+    return {'t': get_translation(lang)}
+
+# --- Flask Routes ---
+
 @flask_app.route('/set_language', methods=['POST'])
 def set_language():
-    """Установить язык"""
     data = request.get_json()
     lang = data.get('lang', 'kk')
     session['lang'] = lang
-    print(f"✅ Язык изменен на: {lang}")  # Debug
     return jsonify({'status': 'ok', 'lang': lang})
 
 @flask_app.route('/get_language')
 def get_language():
-    """Получить текущий язык"""
     lang = session.get('lang', 'kk')
-    print(f"📖 Текущий язык: {lang}")  # Debug
     return jsonify({'lang': lang})
 
-# ==========================================
-# FLASK ROUTES - Authentication
-# ==========================================
 @flask_app.route('/')
 def index():
-    """Главная страница"""
-    # Устанавливаем язык по умолчанию
     if 'lang' not in session:
         session['lang'] = 'kk'
-    
-    # Если уже залогинен, редирект на соответствующую панель
     if 'role' in session:
         role = session['role']
-        if role == 'admin':
-            return redirect(url_for('admin_page'))
-        elif role == 'analyst':
-            return redirect(url_for('analytics_page'))
-        elif role == 'linguist':
-            return redirect(url_for('thesaurus_page'))
-    
+        if role == 'admin': return redirect(url_for('admin_page'))
+        elif role == 'analyst': return redirect(url_for('analytics_page'))
+        elif role == 'linguist': return redirect(url_for('thesaurus_page'))
     return render_template('index.html')
 
 @flask_app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Страница входа"""
-    # Устанавливаем язык по умолчанию
-    if 'lang' not in session:
-        session['lang'] = 'kk'
-    
+    if 'lang' not in session: session['lang'] = 'kk'
     if request.method == 'POST':
         role = request.form.get('role')
         password = request.form.get('password')
-        
-        # Проверка паролей из .env
         valid_passwords = {
             'admin': os.getenv('ADMIN_PASSWORD', 'admin123'),
             'analyst': os.getenv('ANALYST_PASSWORD', 'analyst123'),
             'linguist': os.getenv('LINGUIST_PASSWORD', 'linguist123')
         }
-        
         if role in valid_passwords and password == valid_passwords[role]:
             session['role'] = role
             session['logged_in'] = True
-            
-            # Редирект на соответствующую страницу
-            if role == 'admin':
-                return redirect(url_for('admin_page'))
-            elif role == 'analyst':
-                return redirect(url_for('analytics_page'))
-            elif role == 'linguist':
-                return redirect(url_for('thesaurus_page'))
+            if role == 'admin': return redirect(url_for('admin_page'))
+            elif role == 'analyst': return redirect(url_for('analytics_page'))
+            elif role == 'linguist': return redirect(url_for('thesaurus_page'))
         else:
             return render_template('login.html', error='Құпия сөз қате')
-    
     return render_template('login.html')
 
 @flask_app.route('/logout')
 def logout():
-    """Выход"""
     session.clear()
     return redirect(url_for('index'))
 
-# ==========================================
-# FLASK ROUTES - Admin Panel
-# ==========================================
 @flask_app.route('/admin')
 def admin_page():
-    """Админ панель"""
     if 'role' not in session or session['role'] != 'admin':
         return redirect(url_for('login'))
     
-    # Получаем сообщения из БД
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM messages ORDER BY created_at DESC LIMIT 100')
-    messages = cursor.fetchall()
+    rows = cursor.fetchall()
     conn.close()
     
-    # Конвертируем в список словарей
-    data = []
-    for msg in messages:
-        data.append({
-            'id': msg['id'],
-            'source': msg['source'],
-            'date': msg['date'],
-            'text': msg['text'],
-            'io_type': msg['io_type'],
-            'emo_eval': msg['emo_eval'],
-            'fake_claim': msg['fake_claim']
-        })
-    
+    # Конвертация row objects в словари для шаблона
+    data = [dict(row) for row in rows]
     return render_template('admin.html', data=data)
+
+@flask_app.route("/analyze", methods=["POST"])
+def analyze_json():
+    """Анализ текста и сохранение в SQLite"""
+    if request.is_json:
+        req_data = request.get_json()
+        text = req_data.get("text")
+        channel = req_data.get("channel")
+        date = req_data.get("date")
+    else:
+        text = request.form.get("text")
+        channel = request.form.get("channel")
+        date = request.form.get("date")
+
+    if not text:
+        return jsonify({"error": "Мәтін енгізілмеген"}), 400
+
+    if not date:
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    message_to_analyze = {
+        "text": text,
+        "channel": channel or "Manual Input",
+        "date": date
+    }
+
+    report = analyzer.analyze_single_message(message_to_analyze)
+    analysis_data = report.get("analysis_report", {})
+    sentiment_data = analysis_data.get("general_sentiment", {})
+
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO messages (source, date, text, io_type, emo_eval, fake_claim)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            report.get("source_info", {}).get("channel"),
+            report.get("source_info", {}).get("date"),
+            report.get("original_text"),
+            analysis_data.get("predicted_info_operation_type"),
+            sentiment_data.get("label"),
+            str(analysis_data.get("is_anomaly"))
+        ))
+        
+        message_id = cursor.lastrowid
+        
+        cursor.execute('''
+            INSERT INTO analysis_results (message_id, ner_entities, thesaurus_matches, llm_summary)
+            VALUES (?, ?, ?, ?)
+        ''', (
+            message_id,
+            json.dumps(analysis_data.get("named_entities_recognition", []), ensure_ascii=False),
+            json.dumps(analysis_data.get("military_terms_analysis", []), ensure_ascii=False),
+            json.dumps(analysis_data.get("llm_expert_summary", {}), ensure_ascii=False)
+        ))
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"❌ Ошибка сохранения в БД: {e}")
+
+    return jsonify(report)
 
 @flask_app.route('/delete/<int:record_id>', methods=['POST'])
 def delete_record(record_id):
-    """Удалить запись"""
     if 'role' not in session or session['role'] != 'admin':
         return redirect(url_for('login'))
     
@@ -271,48 +290,33 @@ def delete_record(record_id):
     cursor.execute('DELETE FROM messages WHERE id = ?', (record_id,))
     conn.commit()
     conn.close()
-    
     return redirect(url_for('admin_page'))
 
-# ==========================================
-# FLASK ROUTES - Analytics
-# ==========================================
 @flask_app.route('/analytics')
 def analytics_page():
-    """Страница аналитики"""
-    if 'role' not in session:
-        return redirect(url_for('login'))
-    
+    if 'role' not in session: return redirect(url_for('login'))
     return render_template('analytics.html')
 
-# ==========================================
-# FLASK ROUTES - Thesaurus
-# ==========================================
 @flask_app.route('/thesaurus')
 def thesaurus_page():
-    """Тезаурус"""
-    if 'role' not in session:
-        return redirect(url_for('login'))
+    if 'role' not in session: return redirect(url_for('login'))
     
-    # Загружаем все термины для datalist
     thesaurus = load_thesaurus()
     all_terms = []
+    # Попытка получить термины для подсказок
     for term in thesaurus:
         for lang in ['kk', 'ru', 'en']:
-            term_name = term.get(f'TT_{lang}')
-            if term_name:
-                all_terms.append(f"{term_name} ({lang.upper()})")
-    
+            t_name = term.get(f'TT_{lang}')
+            if t_name: all_terms.append(f"{t_name} ({lang.upper()})")
+            
     return render_template('thesaurus.html', all_terms=all_terms)
-
-# ... остальной код (thesaurus routes, FastAPI, etc)
 
 # ==========================================
 # FASTAPI APP (Backend API)
 # ==========================================
+# ⚠️ ВАЖНО: Создаем экземпляр API ПЕРЕД объявлением маршрутов @api.get
 api = FastAPI(title="Info Operations API", version="1.0")
 
-# CORS для API
 api.add_middleware(
     FastAPICORS,
     allow_origins=["*"],
@@ -321,37 +325,17 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
-# ==========================================
-# PYDANTIC MODELS
-# ==========================================
-class AnalyzeRequest(BaseModel):
-    text: str
-    channel: str
-    date: str
-
-# ==========================================
-# FASTAPI ROUTES
-# ==========================================
 @api.get("/api/stats/summary")
 def get_stats_summary():
-    """Получить краткую статистику"""
     conn = get_db()
     cursor = conn.cursor()
-    
-    # Всего сообщений
     cursor.execute('SELECT COUNT(*) FROM messages')
     total_messages = cursor.fetchone()[0]
     
-    # Сегодня проанализировано
-    cursor.execute('''
-        SELECT COUNT(*) FROM messages 
-        WHERE DATE(created_at) = DATE('now')
-    ''')
+    cursor.execute("SELECT COUNT(*) FROM messages WHERE DATE(created_at) = DATE('now')")
     analyzed_today = cursor.fetchone()[0]
-    
     conn.close()
     
-    # Термины из тезауруса
     thesaurus = load_thesaurus()
     
     return {
@@ -360,14 +344,40 @@ def get_stats_summary():
         'total_terms': len(thesaurus)
     }
 
-# ==========================================
-# MOUNT FLASK TO FASTAPI
-# ==========================================
-api.mount("/", WSGIMiddleware(flask_app))
+@api.get("/api/messages")
+def get_all_messages(source: str = None, date_from: str = None, date_to: str = None):
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    query = "SELECT * FROM messages WHERE 1=1"
+    params = []
+    
+    if source:
+        query += " AND source = ?"
+        params.append(source)
+    if date_from:
+        query += " AND date >= ?"
+        params.append(date_from)
+    if date_to:
+        query += " AND date <= ?"
+        params.append(date_to)
+        
+    query += " ORDER BY created_at DESC"
+    
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Возвращаем список словарей
+    return [dict(row) for row in rows]
 
 # ==========================================
-# MAIN
+# MOUNT & RUN
 # ==========================================
+# Монтируем Flask внутрь FastAPI
+api.mount("/", WSGIMiddleware(flask_app))
+
 if __name__ == "__main__":
     print("\n" + "="*50)
     print("🚀 Сервер іске қосылуда...")
