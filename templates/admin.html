@@ -25,7 +25,6 @@
       </h2>
 
       <form id="analysisForm" class="space-y-4">
-        <!-- Text Input -->
         <div>
           <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['text'] }}</label>
           <textarea id="textInput" rows="6"
@@ -33,7 +32,6 @@
             placeholder="{{ t['enter_text'] }}" required></textarea>
         </div>
 
-        <!-- Channel & Date -->
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm font-bold mb-2 text-gray-300">{{ t['channel'] }}</label>
@@ -47,7 +45,6 @@
           </div>
         </div>
 
-        <!-- Submit Button -->
         <button type="submit"
           class="w-full btn-glow py-3 rounded-xl font-bold bg-gradient-to-r from-neon-purple to-neon-cyan hover:shadow-neon-purple transition-all text-white flex items-center justify-center gap-2 group">
           <i class="fas fa-microscope"></i>
@@ -60,7 +57,6 @@
       <div id="analysisResults" class="mt-6 hidden space-y-4">
         <div class="h-px bg-gradient-to-r from-transparent via-neon-purple to-transparent"></div>
 
-        <!-- General Info -->
         <div class="glass p-4 rounded-xl border border-neon-purple/20">
           <h3 class="text-sm font-bold mb-3 text-neon-cyan flex items-center gap-2">
             <i class="fas fa-info-circle"></i>
@@ -82,7 +78,6 @@
           </div>
         </div>
 
-        <!-- NER Entities -->
         <div class="glass p-4 rounded-xl border border-neon-cyan/20">
           <h3 class="text-sm font-bold mb-3 text-neon-cyan flex items-center gap-2">
             <i class="fas fa-tags"></i>
@@ -91,7 +86,6 @@
           <div id="resEntities" class="flex flex-wrap gap-2"></div>
         </div>
 
-        <!-- Terms -->
         <div class="glass p-4 rounded-xl border border-neon-green/20">
           <h3 class="text-sm font-bold mb-3 text-neon-green flex items-center gap-2">
             <i class="fas fa-book"></i>
@@ -100,7 +94,6 @@
           <div id="resTerms" class="flex flex-wrap gap-2"></div>
         </div>
 
-        <!-- LLM Summary -->
         <div class="glass p-4 rounded-xl border border-neon-purple/20">
           <h3 class="text-sm font-bold mb-3 text-neon-purple flex items-center gap-2">
             <i class="fas fa-brain"></i>
@@ -121,9 +114,19 @@
           <i class="fas fa-stream text-neon-green"></i>
           {{ t['message_feed'] }}
         </h2>
-        <span class="px-3 py-1 rounded-full bg-neon-green/20 text-neon-green text-sm font-bold">
+        <span id="totalCount" class="px-3 py-1 rounded-full bg-neon-green/20 text-neon-green text-sm font-bold">
           {{ data|length }} хабарлама
         </span>
+      </div>
+
+      <!-- 🆕 ПАГИНАЦИЯ: Фильтры -->
+      <div class="mb-4 flex gap-2">
+        <input type="text" id="sourceFilter" placeholder="Фильтр по источнику..."
+          class="flex-1 px-4 py-2 bg-space-light/50 border border-neon-purple/30 rounded-lg text-white text-sm focus:border-neon-purple focus:outline-none">
+        <button onclick="loadMessages(1)"
+          class="px-4 py-2 rounded-lg bg-neon-purple/20 hover:bg-neon-purple/30 text-neon-purple transition-colors text-sm">
+          <i class="fas fa-filter"></i>
+        </button>
       </div>
 
       <!-- Table -->
@@ -140,59 +143,20 @@
               <th class="pb-3">Әрекет</th>
             </tr>
           </thead>
-          <tbody class="space-y-2">
-            {% for item in data %}
-            <tr class="group cursor-pointer" data-id="{{ item.id }}" data-source="{{ item.source or '—' }}"
-              data-date="{{ item.date or '—' }}" data-text="{{ item.text or '—' }}" data-io="{{ item.io_type or '—' }}"
-              data-emo="{{ item.emo_eval or '—' }}" data-fake="{{ item.fake_claim or '—' }}">
-              <td class="py-3 rounded-l-xl bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
-                <span class="text-sm">{{ item.source or '—' }}</span>
-              </td>
-              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
-                <span class="text-xs text-gray-400">{{ item.date[:16] if item.date else '—' }}</span>
-              </td>
-              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
-                <span class="text-sm truncate max-w-xs block">{{ item.text[:50] if item.text else '—' }}...</span>
-              </td>
-              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
-                {% if item.io_type %}
-                <span
-                  class="px-2 py-1 rounded-lg bg-neon-purple/20 text-neon-purple text-xs font-bold border border-neon-purple/30">
-                  {{ item.io_type[:15] }}
-                </span>
-                {% else %}
-                <span class="text-gray-500">—</span>
-                {% endif %}
-              </td>
-              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
-                <span class="text-sm">{{ item.emo_eval or '—' }}</span>
-              </td>
-              <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
-                {% if item.fake_claim == 'True' %}
-                <span
-                  class="px-2 py-1 rounded-lg bg-neon-red/20 text-neon-red text-xs font-bold border border-neon-red/30">
-                  {{ t['true'] }}
-                </span>
-                {% elif item.fake_claim == 'False' %}
-                <span
-                  class="px-2 py-1 rounded-lg bg-neon-green/20 text-neon-green text-xs font-bold border border-neon-green/30">
-                  {{ t['false'] }}
-                </span>
-                {% else %}
-                <span class="text-gray-500">—</span>
-                {% endif %}
-              </td>
-              <td class="py-3 rounded-r-xl bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
-                <button
-                  class="delete-btn px-3 py-1 rounded-lg bg-neon-red/20 hover:bg-neon-red/30 text-neon-red transition-colors text-xs"
-                  data-id="{{ item.id }}">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </td>
-            </tr>
-            {% endfor %}
+          <tbody id="messageTableBody">
+            <!-- Данные загружаются через JavaScript -->
           </tbody>
         </table>
+      </div>
+
+      <!-- 🆕 ПАГИНАЦИЯ: Навигация -->
+      <div id="paginationControls" class="mt-6 flex items-center justify-between">
+        <div id="paginationInfo" class="text-sm text-gray-400">
+          Загрузка...
+        </div>
+        <div id="paginationButtons" class="flex gap-2">
+          <!-- Кнопки генерируются динамически -->
+        </div>
       </div>
     </div>
   </div>
@@ -215,7 +179,15 @@
 
 {% block extra_js %}
 <script>
+  // 🆕 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ ПАГИНАЦИИ
+  let currentPage = 1;
+  let totalPages = 1;
+  let perPage = 10;
+
   $(document).ready(function () {
+    // Загрузить первую страницу
+    loadMessages(1);
+
     // Analysis form submission
     $('#analysisForm').on('submit', function (e) {
       e.preventDefault();
@@ -249,8 +221,8 @@
           Utils.showSuccess('{{ t["analysis_complete"] }}');
           $('#textInput').val('');
 
-          // Add to table (reload page for simplicity)
-          setTimeout(() => location.reload(), 2000);
+          // Перезагрузить таблицу
+          loadMessages(currentPage);
         },
         error: function (xhr) {
           Utils.hideLoading();
@@ -258,76 +230,175 @@
         }
       });
     });
+  });
 
-    // Display analysis results
-    function displayAnalysisResults(data) {
-      const analysis = data.analysis_report;
-      const sentiment = analysis.general_sentiment;
+  // 🆕 ФУНКЦИЯ ЗАГРУЗКИ СООБЩЕНИЙ С ПАГИНАЦИЕЙ
+  function loadMessages(page) {
+    currentPage = page;
+    const source = $('#sourceFilter').val().trim();
 
-      // IO Type
-      $('#resIOType').text(analysis.predicted_info_operation_type || '—');
+    let url = `/api/messages/paginated?page=${page}&per_page=${perPage}`;
+    if (source) url += `&source=${encodeURIComponent(source)}`;
 
-      // Fake Claim
-      const fakeText = analysis.is_anomaly ? '{{ t["true"] }}' : '{{ t["false"] }}';
-      const fakeClass = analysis.is_anomaly ? 'text-neon-red' : 'text-neon-green';
-      $('#resFakeClaim').html(`<span class="${fakeClass} font-bold">${fakeText}</span>`);
-
-      // Emotion
-      const emoClass = sentiment.label.includes('POSITIVE') ? 'text-neon-green' : sentiment.label.includes('NEGATIVE') ? 'text-neon-red' : 'text-gray-400';
-      $('#resEmotion').html(`<span class="${emoClass} font-bold">${sentiment.label}</span> <span class="text-xs text-gray-500">(${(sentiment.score * 100).toFixed(1)}%)</span>`);
-
-      // Entities
-      if (analysis.named_entities_recognition.length > 0) {
-        const entities = analysis.named_entities_recognition.map(e =>
-          `<span class="px-2 py-1 rounded-lg bg-neon-cyan/20 text-neon-cyan text-xs font-bold border border-neon-cyan/30">${e.word} <span class="opacity-50">(${e.entity})</span></span>`
-        ).join(' ');
-        $('#resEntities').html(entities);
-      } else {
-        $('#resEntities').html('<span class="text-gray-500 text-xs">Атаулар табылмады</span>');
+    $.ajax({
+      url: url,
+      method: 'GET',
+      success: function (data) {
+        renderMessages(data.messages);
+        renderPagination(data.pagination);
+      },
+      error: function () {
+        Utils.showError('Деректерді жүктеу сәтсіз аяқталды');
       }
+    });
+  }
 
-      // Terms
-      if (analysis.military_terms_analysis.length > 0) {
-        const terms = analysis.military_terms_analysis.map(t =>
-          `<span class="px-2 py-1 rounded-lg bg-neon-green/20 text-neon-green text-xs font-bold border border-neon-green/30" title="${t.matched_alias}">${t.term_kz || t.term_ru || t.term_en}</span>`
-        ).join(' ');
-        $('#resTerms').html(terms);
-      } else {
-        $('#resTerms').html('<span class="text-gray-500 text-xs">Терминдер табылмады</span>');
-      }
+  // 🆕 ОТРИСОВКА СООБЩЕНИЙ
+  function renderMessages(messages) {
+    const tbody = $('#messageTableBody');
+    tbody.empty();
 
-      // LLM Summary
-      const llm = analysis.llm_expert_summary;
-      $('#resSummary').text(llm.summary || 'LLM талдауы жоқ');
-
-      // Threat Level
-      const threat = llm.threat_level || 0;
-      let threatColor = 'text-neon-green';
-      let threatIcon = 'shield-halved';
-      if (threat >= 4) {
-        threatColor = 'text-neon-red';
-        threatIcon = 'skull';
-      } else if (threat === 3) {
-        threatColor = 'text-yellow-500';
-        threatIcon = 'triangle-exclamation';
-      }
-
-      $('#resThreat').html(`
-                <div class="flex items-center gap-2 ${threatColor}">
-                    <i class="fas fa-${threatIcon}"></i>
-                    <span class="font-bold">Қауіп деңгейі: ${threat}/5</span>
-                </div>
-            `);
-
-      // Show results
-      $('#analysisResults').removeClass('hidden');
+    if (messages.length === 0) {
+      tbody.append(`
+        <tr>
+          <td colspan="7" class="py-8 text-center text-gray-500">
+            <i class="fas fa-inbox text-4xl mb-2 opacity-30"></i>
+            <p>Хабарламалар жоқ</p>
+          </td>
+        </tr>
+      `);
+      return;
     }
 
-    // Row click handler
-    $('#messageTable tbody tr').on('click', function (e) {
+    messages.forEach(item => {
+      const row = `
+        <tr class="group cursor-pointer message-row" 
+            data-id="${item.id}" 
+            data-source="${item.source || '—'}"
+            data-date="${item.date || '—'}" 
+            data-text="${escapeHtml(item.text || '—')}" 
+            data-io="${item.io_type || '—'}"
+            data-emo="${item.emo_eval || '—'}" 
+            data-fake="${item.fake_claim || '—'}">
+          <td class="py-3 rounded-l-xl bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+            <span class="text-sm">${item.source || '—'}</span>
+          </td>
+          <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+            <span class="text-xs text-gray-400">${item.date ? item.date.slice(0, 16) : '—'}</span>
+          </td>
+          <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+            <span class="text-sm truncate max-w-xs block">${item.text ? item.text.slice(0, 50) + '...' : '—'}</span>
+          </td>
+          <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+            ${item.io_type ? `<span class="px-2 py-1 rounded-lg bg-neon-purple/20 text-neon-purple text-xs font-bold border border-neon-purple/30">${item.io_type.slice(0, 15)}</span>` : '<span class="text-gray-500">—</span>'}
+          </td>
+          <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+            <span class="text-sm">${item.emo_eval || '—'}</span>
+          </td>
+          <td class="py-3 bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+            ${item.fake_claim === 'True' ? '<span class="px-2 py-1 rounded-lg bg-neon-red/20 text-neon-red text-xs font-bold border border-neon-red/30">{{ t["true"] }}</span>' :
+          item.fake_claim === 'False' ? '<span class="px-2 py-1 rounded-lg bg-neon-green/20 text-neon-green text-xs font-bold border border-neon-green/30">{{ t["false"] }}</span>' :
+            '<span class="text-gray-500">—</span>'}
+          </td>
+          <td class="py-3 rounded-r-xl bg-space-light/30 group-hover:bg-neon-purple/10 transition-colors px-3">
+            <button class="delete-btn px-3 py-1 rounded-lg bg-neon-red/20 hover:bg-neon-red/30 text-neon-red transition-colors text-xs" data-id="${item.id}">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+      tbody.append(row);
+    });
+
+    // Привязать обработчики
+    attachRowHandlers();
+  }
+
+  // 🆕 ОТРИСОВКА ПАГИНАЦИИ
+  function renderPagination(pagination) {
+    totalPages = pagination.total_pages;
+
+    // Информация
+    $('#paginationInfo').html(`
+      Страница ${pagination.page} из ${totalPages} 
+      <span class="text-gray-600">(всего ${pagination.total} записей)</span>
+    `);
+
+    $('#totalCount').text(`${pagination.total} хабарлама`);
+
+    // Кнопки
+    const buttons = $('#paginationButtons');
+    buttons.empty();
+
+    // Предыдущая
+    if (pagination.has_prev) {
+      buttons.append(`
+        <button onclick="loadMessages(${pagination.page - 1})" 
+                class="px-3 py-2 rounded-lg bg-neon-purple/20 hover:bg-neon-purple/30 text-neon-purple transition-colors text-sm">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+      `);
+    }
+
+    // Номера страниц (показываем 5 кнопок)
+    const startPage = Math.max(1, pagination.page - 2);
+    const endPage = Math.min(totalPages, pagination.page + 2);
+
+    // Первая страница
+    if (startPage > 1) {
+      buttons.append(`
+        <button onclick="loadMessages(1)" 
+                class="px-3 py-2 rounded-lg bg-space-light/50 hover:bg-neon-purple/20 text-gray-400 hover:text-white transition-colors text-sm">
+          1
+        </button>
+      `);
+      if (startPage > 2) {
+        buttons.append('<span class="px-2 text-gray-600">...</span>');
+      }
+    }
+
+    // Средние страницы
+    for (let i = startPage; i <= endPage; i++) {
+      const isActive = i === pagination.page;
+      buttons.append(`
+        <button onclick="loadMessages(${i})" 
+                class="px-3 py-2 rounded-lg ${isActive ? 'bg-gradient-to-r from-neon-purple to-neon-cyan text-white shadow-neon-purple' : 'bg-space-light/50 hover:bg-neon-purple/20 text-gray-400 hover:text-white'} transition-colors text-sm font-bold">
+          ${i}
+        </button>
+      `);
+    }
+
+    // Последняя страница
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        buttons.append('<span class="px-2 text-gray-600">...</span>');
+      }
+      buttons.append(`
+        <button onclick="loadMessages(${totalPages})" 
+                class="px-3 py-2 rounded-lg bg-space-light/50 hover:bg-neon-purple/20 text-gray-400 hover:text-white transition-colors text-sm">
+          ${totalPages}
+        </button>
+      `);
+    }
+
+    // Следующая
+    if (pagination.has_next) {
+      buttons.append(`
+        <button onclick="loadMessages(${pagination.page + 1})" 
+                class="px-3 py-2 rounded-lg bg-neon-purple/20 hover:bg-neon-purple/30 text-neon-purple transition-colors text-sm">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      `);
+    }
+  }
+
+  // 🆕 ПРИВЯЗКА ОБРАБОТЧИКОВ К СТРОКАМ
+  function attachRowHandlers() {
+    // Клик по строке
+    $('.message-row').off('click').on('click', function (e) {
       if ($(e.target).closest('.delete-btn').length) return;
 
-      $('#messageTable tbody tr').removeClass('!bg-neon-purple/20');
+      $('.message-row').removeClass('!bg-neon-purple/20');
       $(this).addClass('!bg-neon-purple/20');
 
       const data = {
@@ -342,42 +413,8 @@
       displayMessageAnalysis(data);
     });
 
-    // Display message analysis
-    function displayMessageAnalysis(data) {
-      const fakeClass = data.fake === 'True' ? 'text-neon-red' : data.fake === 'False' ? 'text-neon-green' : 'text-gray-400';
-
-      $('#analysisContent').html(`
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                    <div class="glass p-4 rounded-xl">
-                        <div class="text-xs text-gray-400 mb-1">Дереккөз</div>
-                        <div class="font-bold">${data.source}</div>
-                    </div>
-                    <div class="glass p-4 rounded-xl">
-                        <div class="text-xs text-gray-400 mb-1">Күні</div>
-                        <div class="font-bold">${data.date}</div>
-                    </div>
-                    <div class="glass p-4 rounded-xl">
-                        <div class="text-xs text-gray-400 mb-1">IO түрі</div>
-                        <div class="font-bold text-neon-purple">${data.io}</div>
-                    </div>
-                    <div class="glass p-4 rounded-xl">
-                        <div class="text-xs text-gray-400 mb-1">Эмоция</div>
-                        <div class="font-bold">${data.emo}</div>
-                    </div>
-                    <div class="glass p-4 rounded-xl">
-                        <div class="text-xs text-gray-400 mb-1">Фейк деректеме</div>
-                        <div class="font-bold ${fakeClass}">${data.fake}</div>
-                    </div>
-                    <div class="glass p-4 rounded-xl col-span-1 md:col-span-3">
-                        <div class="text-xs text-gray-400 mb-2">Мәтін</div>
-                        <div class="text-sm leading-relaxed">${data.text}</div>
-                    </div>
-                </div>
-            `);
-    }
-
-    // Delete button handler
-    $('.delete-btn').on('click', function (e) {
+    // Удаление
+    $('.delete-btn').off('click').on('click', function (e) {
       e.stopPropagation();
       const id = $(this).data('id');
 
@@ -394,10 +431,112 @@
         color: '#F1F5F9'
       }).then((result) => {
         if (result.isConfirmed) {
-          $.post(`/delete/${id}`, () => location.reload());
+          $.post(`/delete/${id}`, () => loadMessages(currentPage));
         }
       });
     });
-  });
+  }
+
+  // Вспомогательная функция
+  function escapeHtml(text) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+  }
+
+  // Display analysis results (без изменений)
+  function displayAnalysisResults(data) {
+    const analysis = data.analysis_report;
+    const sentiment = analysis.general_sentiment;
+
+    $('#resIOType').text(analysis.predicted_info_operation_type || '—');
+
+    const fakeText = analysis.is_anomaly ? '{{ t["true"] }}' : '{{ t["false"] }}';
+    const fakeClass = analysis.is_anomaly ? 'text-neon-red' : 'text-neon-green';
+    $('#resFakeClaim').html(`<span class="${fakeClass} font-bold">${fakeText}</span>`);
+
+    const emoClass = sentiment.label.includes('POSITIVE') ? 'text-neon-green' : sentiment.label.includes('NEGATIVE') ? 'text-neon-red' : 'text-gray-400';
+    $('#resEmotion').html(`<span class="${emoClass} font-bold">${sentiment.label}</span> <span class="text-xs text-gray-500">(${(sentiment.score * 100).toFixed(1)}%)</span>`);
+
+    if (analysis.named_entities_recognition.length > 0) {
+      const entities = analysis.named_entities_recognition.map(e =>
+        `<span class="px-2 py-1 rounded-lg bg-neon-cyan/20 text-neon-cyan text-xs font-bold border border-neon-cyan/30">${e.word} <span class="opacity-50">(${e.entity})</span></span>`
+      ).join(' ');
+      $('#resEntities').html(entities);
+    } else {
+      $('#resEntities').html('<span class="text-gray-500 text-xs">Атаулар табылмады</span>');
+    }
+
+    if (analysis.military_terms_analysis.length > 0) {
+      const terms = analysis.military_terms_analysis.map(t =>
+        `<span class="px-2 py-1 rounded-lg bg-neon-green/20 text-neon-green text-xs font-bold border border-neon-green/30" title="${t.matched_alias}">${t.term_kz || t.term_ru || t.term_en}</span>`
+      ).join(' ');
+      $('#resTerms').html(terms);
+    } else {
+      $('#resTerms').html('<span class="text-gray-500 text-xs">Терминдер табылмады</span>');
+    }
+
+    const llm = analysis.llm_expert_summary;
+    $('#resSummary').text(llm.summary || 'LLM талдауы жоқ');
+
+    const threat = llm.threat_level || 0;
+    let threatColor = 'text-neon-green';
+    let threatIcon = 'shield-halved';
+    if (threat >= 4) {
+      threatColor = 'text-neon-red';
+      threatIcon = 'skull';
+    } else if (threat === 3) {
+      threatColor = 'text-yellow-500';
+      threatIcon = 'triangle-exclamation';
+    }
+
+    $('#resThreat').html(`
+      <div class="flex items-center gap-2 ${threatColor}">
+        <i class="fas fa-${threatIcon}"></i>
+        <span class="font-bold">Қауіп деңгейі: ${threat}/5</span>
+      </div>
+    `);
+
+    $('#analysisResults').removeClass('hidden');
+  }
+
+  // Display message analysis (без изменений)
+  function displayMessageAnalysis(data) {
+    const fakeClass = data.fake === 'True' ? 'text-neon-red' : data.fake === 'False' ? 'text-neon-green' : 'text-gray-400';
+
+    $('#analysisContent').html(`
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+        <div class="glass p-4 rounded-xl">
+          <div class="text-xs text-gray-400 mb-1">Дереккөз</div>
+          <div class="font-bold">${data.source}</div>
+        </div>
+        <div class="glass p-4 rounded-xl">
+          <div class="text-xs text-gray-400 mb-1">Күні</div>
+          <div class="font-bold">${data.date}</div>
+        </div>
+        <div class="glass p-4 rounded-xl">
+          <div class="text-xs text-gray-400 mb-1">IO түрі</div>
+          <div class="font-bold text-neon-purple">${data.io}</div>
+        </div>
+        <div class="glass p-4 rounded-xl">
+          <div class="text-xs text-gray-400 mb-1">Эмоция</div>
+          <div class="font-bold">${data.emo}</div>
+        </div>
+        <div class="glass p-4 rounded-xl">
+          <div class="text-xs text-gray-400 mb-1">Фейк деректеме</div>
+          <div class="font-bold ${fakeClass}">${data.fake}</div>
+        </div>
+        <div class="glass p-4 rounded-xl col-span-1 md:col-span-3">
+          <div class="text-xs text-gray-400 mb-2">Мәтін</div>
+          <div class="text-sm leading-relaxed">${data.text}</div>
+        </div>
+      </div>
+    `);
+  }
 </script>
 {% endblock %}

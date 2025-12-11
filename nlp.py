@@ -1,8 +1,8 @@
 import json
 import warnings
-import ollama
 import numpy as np
-import sqlite3  # SQLite қосылды
+import sqlite3
+import os
 from rapidfuzz import fuzz
 from sentence_transformers import SentenceTransformer
 from sklearn.ensemble import IsolationForest
@@ -12,13 +12,21 @@ from transformers import pipeline, logging
 from datetime import datetime
 from pathlib import Path
 import joblib
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 BASE_DIR = Path(__file__).resolve().parent
 THESAURUS_FILE = BASE_DIR / "data" / "thesaurus.json"
-# TRAINING_DATA_FILE енді керек емес, DB_PATH қолданамыз
 DB_PATH = BASE_DIR / "data" / "db.sqlite"
 
-OLLAMA_MODEL = 'llama3'
+# 🆕 ПЕРЕКЛЮЧЕНИЕ МЕЖДУ OLLAMA И GROQ
+USE_GROQ = os.getenv('USE_GROQ', 'true').lower() == 'true'
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+
+# Старая модель (если USE_GROQ=false)
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3')
 
 logging.set_verbosity_error()
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -32,6 +40,16 @@ class NLPAnalyzer:
         self.anomaly_model = None
         self._load_hf_models()
         self.model_path = BASE_DIR / "data" / "models.pkl"
+        
+        # 🆕 Проверка LLM доступности
+        if USE_GROQ:
+            if not GROQ_API_KEY:
+                print("⚠️ GROQ_API_KEY не найден в .env. LLM анализ будет недоступен.")
+                print("Получите бесплатный ключ на: https://console.groq.com/keys")
+            else:
+                print("✅ Groq API настроен")
+        else:
+            print("⚠️ Используется Ollama (требует локального запуска)")
 
     def _load_thesaurus(self):
         try:
@@ -75,7 +93,6 @@ class NLPAnalyzer:
         try:
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
-            # Тек io_type бар жазбаларды аламыз (оқыту үшін)
             cursor.execute("SELECT text, io_type FROM messages WHERE io_type IS NOT NULL AND text IS NOT NULL")
             rows = cursor.fetchall()
             conn.close()
@@ -100,7 +117,6 @@ class NLPAnalyzer:
         else:
             print(f"⚠️ Классификатор үйретілмеді. Бір ғана класс бар: {unique_labels}")
 
-        # Аномалия моделі (барлық мәтіндерге үйретеміз)
         self.anomaly_model = IsolationForest(contamination=0.1, random_state=42)
         self.anomaly_model.fit(self.embedder.encode(texts))
         print("✅ Аномалия моделі дайын.")
@@ -138,7 +154,8 @@ class NLPAnalyzer:
         is_anomaly = False
         if self.anomaly_model:
             is_anomaly = True if self.anomaly_model.predict(self.embedder.encode([text]))[0] == -1 else False
-            
+        
+        # 🆕 ИСПОЛЬЗОВАНИЕ GROQ ИЛИ OLLAMA
         llm_analysis = self._get_llm_summary(text, ner_entities, thesaurus_matches)
 
         return {
@@ -182,18 +199,140 @@ class NLPAnalyzer:
         return matches
 
     def _get_llm_summary(self, text, ner, thesaurus):
-        prompt = f"Текст: \"{text}\"\nСущности: {ner}\nТермины: {thesaurus}\nЗадача: Напиши краткую сводку (2-3 предложения) и оцени уровень угрозы (1-5). Ответ дай в JSON."
+        """
+        🆕 УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ LLM АНАЛИЗА
+        Автоматически выбирает между Groq и Ollama
+        """
+        
+        prompt = f"""Проанализируй текст на русском языке:
+
+Текст: "{text}"
+
+Найденные сущности: {ner}
+Военные термины: {thesaurus}
+
+Задача:
+1. Напиши краткую сводку (2-3 предложения) о содержании текста
+2. Оцени уровень угрозы от 1 до 5:
+   - 1-2: Информационный/нейтральный
+   - 3: Потенциально манипулятивный
+   - 4-5: Явная дезинформация/угроза
+
+Ответь СТРОГО в JSON формате:
+{{
+  "summary": "краткая сводка",
+  "threat_level": число от 1 до 5
+}}"""
+
+        if USE_GROQ:
+            return self._call_groq_api(prompt)
+        else:
+            return self._call_ollama_api(prompt)
+
+    def _call_groq_api(self, prompt):
+        """
+        🆕 ВЫЗОВ GROQ API
+        Документация: https://console.groq.com/docs/quickstart
+        """
+        if not GROQ_API_KEY:
+            return {
+                "summary": "LLM недоступен: GROQ_API_KEY не настроен",
+                "threat_level": -1
+            }
+        
         try:
+            import requests
+            
+            response = requests.post(
+                'https://api.groq.com/openai/v1/chat/completions',
+                headers={
+                    'Authorization': f'Bearer {GROQ_API_KEY}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'model': 'llama-3.3-70b-versatile',  # Бесплатная модель
+                    'messages': [
+                        {
+                            'role': 'system',
+                            'content': 'Ты эксперт по анализу информационных операций. Отвечай ТОЛЬКО в JSON формате.'
+                        },
+                        {
+                            'role': 'user',
+                            'content': prompt
+                        }
+                    ],
+                    'temperature': 0.3,
+                    'max_tokens': 500
+                },
+                timeout=15
+            )
+            
+            if response.status_code != 200:
+                print(f"⚠️ Groq API ошибка: {response.status_code}")
+                return {
+                    "summary": f"Ошибка API: {response.status_code}",
+                    "threat_level": -1
+                }
+            
+            result = response.json()
+            content = result['choices'][0]['message']['content']
+            
+            # Очистка от markdown
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.startswith('```'):
+                content = content[3:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            return json.loads(content)
+            
+        except requests.Timeout:
+            return {
+                "summary": "Превышено время ожидания API",
+                "threat_level": -1
+            }
+        except json.JSONDecodeError as e:
+            print(f"⚠️ Ошибка парсинга JSON: {e}")
+            return {
+                "summary": "Ошибка обработки ответа LLM",
+                "threat_level": -1
+            }
+        except Exception as e:
+            print(f"⚠️ Groq API ошибка: {e}")
+            return {
+                "summary": f"Ошибка LLM: {str(e)}",
+                "threat_level": -1
+            }
+
+    def _call_ollama_api(self, prompt):
+        """
+        СТАРЫЙ МЕТОД С OLLAMA (для локальной разработки)
+        """
+        try:
+            import ollama
+            
             response = ollama.chat(
                 model=OLLAMA_MODEL,
                 messages=[{'role': 'user', 'content': prompt}],
                 format='json',
-                options={'timeout': 120}
+                options={'timeout': 30}
             )
+            
             return json.loads(response['message']['content'])
+        except ImportError:
+            return {
+                "summary": "Ollama не установлен. Используйте USE_GROQ=true",
+                "threat_level": -1
+            }
         except Exception as e:
             print(f"⚠ Ollama қатесі: {e}")
-            return {"summary": "Ollama-дан жауап алынбады.", "threat_level": -1}
+            return {
+                "summary": f"Ошибка Ollama: {str(e)}",
+                "threat_level": -1
+            }
 
 if __name__ == "__main__":
     analyzer = NLPAnalyzer()

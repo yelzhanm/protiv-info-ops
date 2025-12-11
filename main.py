@@ -17,7 +17,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_cors import CORS
 
 # FastAPI
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.middleware.cors import CORSMiddleware as FastAPICORS
 from pydantic import BaseModel
@@ -84,9 +84,14 @@ def init_db():
         )
     ''')
     
+    # 🆕 СОЗДАЕМ ИНДЕКСЫ ДЛЯ БЫСТРОГО ПОИСКА
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at DESC)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_messages_source ON messages(source)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_messages_date ON messages(date)')
+    
     conn.commit()
     conn.close()
-    print("✅ База данных инициализирована")
+    print("✅ База данных инициализирована с индексами")
 
 init_db()
 
@@ -96,8 +101,6 @@ init_db()
 analyzer = NLPAnalyzer()
 try:
     if DB_PATH.exists():
-        # ВАЖНО: Используем метод для чтения из БД, а не из файла
-        # Убедитесь, что в nlp.py есть метод train_models_from_db
         if hasattr(analyzer, 'train_models_from_db'):
             analyzer.train_models_from_db(str(DB_PATH))
         else:
@@ -206,13 +209,14 @@ def admin_page():
     if 'role' not in session or session['role'] != 'admin':
         return redirect(url_for('login'))
     
+    # 🆕 ПАГИНАЦИЯ: показываем только первые 10 записей
+    # Остальные загрузятся через API
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM messages ORDER BY created_at DESC LIMIT 100')
+    cursor.execute('SELECT * FROM messages ORDER BY created_at DESC LIMIT 10')
     rows = cursor.fetchall()
     conn.close()
     
-    # Конвертация row objects в словари для шаблона
     data = [dict(row) for row in rows]
     return render_template('admin.html', data=data)
 
@@ -303,7 +307,6 @@ def thesaurus_page():
     
     thesaurus = load_thesaurus()
     all_terms = []
-    # Попытка получить термины для подсказок
     for term in thesaurus:
         for lang in ['kk', 'ru', 'en']:
             t_name = term.get(f'TT_{lang}')
@@ -314,7 +317,6 @@ def thesaurus_page():
 # ==========================================
 # FASTAPI APP (Backend API)
 # ==========================================
-# ⚠️ ВАЖНО: Создаем экземпляр API ПЕРЕД объявлением маршрутов @api.get
 api = FastAPI(title="Info Operations API", version="1.0")
 
 api.add_middleware(
@@ -344,6 +346,76 @@ def get_stats_summary():
         'total_terms': len(thesaurus)
     }
 
+# 🆕 НОВЫЙ API ЭНДПОИНТ С ПАГИНАЦИЕЙ
+@api.get("/api/messages/paginated")
+def get_messages_paginated(
+    page: int = Query(1, ge=1, description="Номер страницы"),
+    per_page: int = Query(10, ge=1, le=100, description="Записей на странице"),
+    source: str = Query(None, description="Фильтр по источнику"),
+    date_from: str = Query(None, description="Дата начала (YYYY-MM-DD)"),
+    date_to: str = Query(None, description="Дата окончания (YYYY-MM-DD)")
+):
+    """
+    Получить сообщения с пагинацией
+    
+    Example: /api/messages/paginated?page=2&per_page=10
+    """
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Базовый запрос
+    query = "SELECT * FROM messages WHERE 1=1"
+    count_query = "SELECT COUNT(*) FROM messages WHERE 1=1"
+    params = []
+    
+    # Фильтры
+    if source:
+        query += " AND source = ?"
+        count_query += " AND source = ?"
+        params.append(source)
+    
+    if date_from:
+        query += " AND date >= ?"
+        count_query += " AND date >= ?"
+        params.append(date_from)
+    
+    if date_to:
+        query += " AND date <= ?"
+        count_query += " AND date <= ?"
+        params.append(date_to)
+    
+    # Подсчет общего количества
+    cursor.execute(count_query, params)
+    total = cursor.fetchone()[0]
+    
+    # Пагинация
+    offset = (page - 1) * per_page
+    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+    params.extend([per_page, offset])
+    
+    # Получить данные
+    cursor.execute(query, params)
+    messages = [dict(row) for row in cursor.fetchall()]
+    
+    conn.close()
+    
+    # Вычисляем количество страниц
+    total_pages = (total + per_page - 1) // per_page
+    
+    return {
+        'messages': messages,
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'total_pages': total_pages,
+            'has_next': page < total_pages,
+            'has_prev': page > 1
+        }
+    }
+
+# Старый эндпоинт (для совместимости)
 @api.get("/api/messages")
 def get_all_messages(source: str = None, date_from: str = None, date_to: str = None):
     conn = get_db()
@@ -369,13 +441,11 @@ def get_all_messages(source: str = None, date_from: str = None, date_to: str = N
     rows = cursor.fetchall()
     conn.close()
     
-    # Возвращаем список словарей
     return [dict(row) for row in rows]
 
 # ==========================================
 # MOUNT & RUN
 # ==========================================
-# Монтируем Flask внутрь FastAPI
 api.mount("/", WSGIMiddleware(flask_app))
 
 if __name__ == "__main__":
